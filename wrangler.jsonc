@@ -13,9 +13,11 @@
     "directory": ".",
     "binding": "ASSETS"
   },
-  // Where edited Jeopardy questions are saved.
+  // Where edited Jeopardy questions are saved. The id pins the
+  // "babyshowerapp-questions" namespace so production AND branch previews
+  // use the same store (without it, previews weren't connected).
   "kv_namespaces": [
-    { "binding": "QUESTIONS" }
+    { "binding": "QUESTIONS", "id": "a8b5223cc6a9484795f3d4dbe774dbba" }
   ],
   // Required by `wrangler preview` (used for non-production branch builds).
   // Empty is fine — assets and compatibility settings above are inherited.
