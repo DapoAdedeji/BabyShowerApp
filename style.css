@@ -1,0 +1,448 @@
+/* ============================================================
+   BABY SHOWER EVENT APP — SHARED SHELL STYLES
+   Used by the hub (this file) and by the "coming soon" feature
+   pages (slideshow/leaderboard/karaoke), which link to this file
+   via ../style.css. The jeopardy/ feature is self-contained with
+   its own stylesheet — don't need to touch this file for that.
+
+   Edit the CSS variables below to shift the whole app's palette.
+   ============================================================ */
+
+:root {
+  --pink: #ffd6e8;
+  --pink-deep: #ff9ecf;
+  --blue: #cdeffd;
+  --blue-deep: #8fd9f7;
+  --mint: #d8f5e3;
+  --mint-deep: #8fe0b3;
+  --butter: #fff6cf;
+  --butter-deep: #ffe066;
+  --lavender: #e6dcfb;
+  --ink: #4a3b52;
+  --ink-soft: #7a6b82;
+  --white: #fffdfb;
+  --shadow: rgba(122, 90, 120, 0.18);
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --font-display: 'Baloo 2', system-ui, sans-serif;
+  --font-body: 'Quicksand', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: linear-gradient(135deg, var(--blue) 0%, var(--pink) 50%, var(--butter) 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* ---------- Floating background decoration ---------- */
+.floaty-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.floaty-bg span {
+  position: absolute;
+  font-size: 2.6rem;
+  opacity: 0.25;
+  animation: float-up 18s linear infinite;
+  bottom: -10%;
+}
+.floaty-bg span:nth-child(1) { left: 4%;  animation-delay: 0s;  }
+.floaty-bg span:nth-child(2) { left: 18%; animation-delay: 3s;  font-size: 2rem; }
+.floaty-bg span:nth-child(3) { left: 32%; animation-delay: 6s;  }
+.floaty-bg span:nth-child(4) { left: 48%; animation-delay: 1s;  font-size: 1.6rem; }
+.floaty-bg span:nth-child(5) { left: 63%; animation-delay: 9s;  }
+.floaty-bg span:nth-child(6) { left: 77%; animation-delay: 4s;  font-size: 2.2rem; }
+.floaty-bg span:nth-child(7) { left: 88%; animation-delay: 7s;  }
+.floaty-bg span:nth-child(8) { left: 95%; animation-delay: 2s;  font-size: 1.8rem; }
+
+@keyframes float-up {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.25; }
+  90%  { opacity: 0.25; }
+  100% { transform: translateY(-120vh) rotate(25deg); opacity: 0; }
+}
+
+/* ---------- Screens ---------- */
+.screen {
+  position: relative;
+  z-index: 1;
+  display: none;
+  min-height: 100vh;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 24px;
+}
+.screen.active { display: flex; }
+
+/* ---------- Shared buttons ---------- */
+.btn-primary {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--white);
+  background: linear-gradient(135deg, var(--pink-deep), #ff7fb8);
+  border: none;
+  border-radius: 999px;
+  padding: 14px 36px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(255, 126, 184, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-primary:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 14px 30px rgba(255, 126, 184, 0.55); }
+.btn-primary:active { transform: translateY(0) scale(0.99); }
+
+.btn-ghost {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: rgba(255,255,255,0.7);
+  border: 2px solid var(--lavender);
+  border-radius: 999px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-ghost:hover { background: var(--lavender); color: var(--ink); }
+
+/* ---------- Welcome screen ---------- */
+.welcome-card {
+  background: rgba(255, 253, 251, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px var(--shadow);
+  padding: 56px 48px;
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+  border: 3px solid var(--white);
+}
+
+.eyebrow {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  color: var(--blue-deep);
+  margin: 0 0 10px;
+}
+
+.welcome-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1.2;
+  margin: 0 0 16px;
+  color: var(--ink);
+}
+.welcome-title .names {
+  color: var(--pink-deep);
+  text-shadow: 2px 2px 0 var(--butter);
+}
+
+.welcome-subtitle {
+  margin: 0 0 32px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* ---------- Menu screen ---------- */
+.menu-wrap {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.menu-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+  color: var(--pink-deep);
+  margin: 0 0 6px;
+  text-shadow: 2px 2px 0 var(--butter);
+}
+
+.menu-subtitle {
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin: 0 0 32px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.menu-tile {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 30px var(--shadow);
+  border: 3px solid var(--lavender);
+  padding: 36px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.menu-tile:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 18px 36px var(--shadow);
+  border-color: var(--pink-deep);
+}
+
+.menu-tile.live {
+  border-color: var(--pink-deep);
+  background: linear-gradient(135deg, #fff, #fff0f7);
+}
+
+.tile-icon { font-size: 3rem; line-height: 1; }
+
+.tile-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.tile-tag {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: var(--lavender);
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.menu-tile.live .tile-tag {
+  color: var(--white);
+  background: var(--pink-deep);
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+.back-link:hover { color: var(--pink-deep); }
+
+/* ---------- Team setup card (used by Leaderboard's first-run flow) ---------- */
+.setup-card {
+  background: rgba(255, 253, 251, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px var(--shadow);
+  padding: 40px 48px;
+  max-width: 640px;
+  width: 100%;
+  text-align: center;
+  border: 3px solid var(--white);
+}
+
+.setup-card h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+  margin: 0 0 6px;
+  color: var(--pink-deep);
+}
+
+.setup-card .setup-sub {
+  margin: 0 0 28px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.setup-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin: 0 0 14px;
+  color: var(--ink);
+}
+
+.team-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.team-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  border: 2px solid var(--blue-deep);
+}
+.team-input-row .swatch {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+}
+.team-input-row input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1rem;
+  width: 100%;
+  color: var(--ink);
+}
+
+.team-count-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0 28px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.btn-round {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--lavender);
+  color: var(--ink);
+  font-size: 1.3rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  line-height: 1;
+}
+.btn-round:hover { background: var(--pink-deep); color: var(--white); transform: scale(1.08); }
+.btn-round:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+/* ---------- League table (Leaderboard) ---------- */
+.league-card {
+  background: rgba(255, 253, 251, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px var(--shadow);
+  padding: 40px 48px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  border: 3px solid var(--white);
+}
+.league-card h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.7rem, 4.5vw, 2.4rem);
+  margin: 0 0 6px;
+  color: var(--pink-deep);
+}
+.league-card .league-sub {
+  margin: 0 0 24px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.league-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.league-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  border: 2px solid var(--blue-deep);
+  font-weight: 700;
+}
+.league-row.first {
+  border-color: var(--butter-deep);
+  background: linear-gradient(135deg, #fffef5, var(--butter));
+  transform: scale(1.02);
+}
+.league-rank {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  width: 28px;
+  flex-shrink: 0;
+}
+.league-swatch {
+  width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+}
+.league-name {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.league-score {
+  font-family: var(--font-display);
+  color: var(--pink-deep);
+  font-size: 1.2rem;
+}
+
+.league-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ---------- Gate message (e.g. "teams not set up yet") ---------- */
+.gate-icon { font-size: 3.4rem; margin-bottom: 8px; }
+
+/* ---------- Placeholder "coming soon" pages ---------- */
+.placeholder-card {
+  background: rgba(255, 253, 251, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px var(--shadow);
+  padding: 56px 48px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  border: 3px solid var(--white);
+}
+.placeholder-icon { font-size: 4rem; margin-bottom: 10px; }
+.placeholder-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  color: var(--pink-deep);
+  margin: 0 0 10px;
+}
+.placeholder-sub {
+  color: var(--ink-soft);
+  font-weight: 600;
+  margin: 0 0 28px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 640px) {
+  .menu-grid { grid-template-columns: 1fr; }
+  .welcome-card, .placeholder-card { padding: 36px 26px; }
+}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baby Shower Jeopardy!</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍼</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="floaty-bg" aria-hidden="true">
+    <span>🍼</span><span>🧸</span><span>👶</span><span>🌙</span><span>⭐</span><span>🍼</span><span>🧸</span><span>👶</span>
+  </div>
+
+  <!-- ===================== GATE SCREEN (no teams registered yet) ===================== -->
+  <section id="screen-gate" class="screen">
+    <div class="start-card">
+      <div class="gate-icon">🙋</div>
+      <h1 class="game-title">Teams aren't set up yet!</h1>
+      <p class="game-subtitle">Head to the Leaderboard first to register who's playing — then come straight back here.</p>
+      <a href="../leaderboard/" class="btn-primary">Go to Leaderboard →</a>
+      <a href="../index.html#menu" class="back-link" style="display:block; margin-top:16px;">← Back to Menu</a>
+    </div>
+  </section>
+
+  <!-- ===================== START SCREEN ===================== -->
+  <section id="screen-start" class="screen">
+    <div class="start-card">
+      <a href="../index.html#menu" class="back-link">← Back to Menu</a>
+      <h1 class="game-title"><span id="title-text">Baby Shower Jeopardy!</span></h1>
+      <p class="game-subtitle" id="subtitle-text">Get ready to question everything (literally)</p>
+
+      <div class="team-setup">
+        <h2>Who's playing?</h2>
+        <div id="team-roster" class="team-inputs"></div>
+        <p class="roster-hint">Not the right lineup? <a href="../leaderboard/">Edit teams on the Leaderboard</a>.</p>
+      </div>
+
+      <button id="btn-start" class="btn-primary">Start the Game 🎉</button>
+    </div>
+  </section>
+
+  <!-- ===================== BOARD SCREEN ===================== -->
+  <section id="screen-board" class="screen">
+    <header class="board-header">
+      <div class="scoreboard" id="scoreboard"></div>
+      <div class="board-header-actions">
+        <span class="clue-counter" id="clue-counter"></span>
+        <a href="../index.html#menu" class="btn-ghost">Menu</a>
+        <button id="btn-end-game" class="btn-ghost">End Game</button>
+      </div>
+    </header>
+
+    <div class="board-wrap">
+      <div id="board" class="board"></div>
+    </div>
+  </section>
+
+  <!-- ===================== CLUE MODAL ===================== -->
+  <div id="clue-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-category" id="modal-category"></div>
+      <div class="modal-value" id="modal-value"></div>
+
+      <div class="modal-body">
+        <p class="modal-clue" id="modal-clue"></p>
+        <p class="modal-answer" id="modal-answer"></p>
+      </div>
+
+      <button id="btn-reveal" class="btn-primary">Reveal Answer</button>
+
+      <div id="award-section" class="award-section hidden">
+        <p class="award-prompt">Who got it right?</p>
+        <div id="award-buttons" class="award-buttons"></div>
+        <button id="btn-no-one" class="btn-ghost">No one got it</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== FINAL SCREEN ===================== -->
+  <section id="screen-final" class="screen">
+    <div class="confetti-field" id="confetti-field" aria-hidden="true"></div>
+    <div class="final-card">
+      <h1 class="final-title">🎉 Final Scores 🎉</h1>
+      <div id="final-rankings" class="final-rankings"></div>
+      <button id="btn-play-again" class="btn-primary">Play Again</button>
+      <a href="../index.html#menu" class="btn-ghost final-menu-link">← Back to Menu</a>
+    </div>
+  </section>
+
+  <script src="../session.js"></script>
+  <script src="questions.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
