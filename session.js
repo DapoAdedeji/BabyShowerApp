@@ -15,6 +15,8 @@
 //   ShowerSession.getTeams()         -> [{ name, score, color }, ...]
 //   ShowerSession.save(teamNames)    -> creates a fresh session, all scores 0
 //   ShowerSession.updateScore(i, delta) -> adds delta to team i's score
+//   ShowerSession.setScores([n, ...])   -> overwrites every team's score (manual edits)
+//   ShowerSession.resetScores()       -> sets every score back to 0, keeps teams
 //   ShowerSession.clear()            -> wipes the session entirely
 // ============================================================
 
@@ -68,9 +70,29 @@ window.ShowerSession = (function () {
     return data;
   }
 
+  // scores: array of numbers, one per team (same order as getTeams()).
+  function setScores(scores) {
+    const data = load();
+    if (!data) return null;
+    data.teams.forEach((team, i) => {
+      const n = Number(scores[i]);
+      if (Number.isFinite(n)) team.score = Math.round(n);
+    });
+    persist(data);
+    return data;
+  }
+
+  function resetScores() {
+    const data = load();
+    if (!data) return null;
+    data.teams.forEach(team => { team.score = 0; });
+    persist(data);
+    return data;
+  }
+
   function clear() {
     localStorage.removeItem(KEY);
   }
 
-  return { hasTeams, getTeams, save, updateScore, clear, TEAM_COLORS };
+  return { hasTeams, getTeams, save, updateScore, setScores, resetScores, clear, TEAM_COLORS };
 })();

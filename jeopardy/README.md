@@ -39,15 +39,36 @@ hub's menu screen.
    points — or **No one got it** if nobody gets it. The tile is marked off
    either way. Points are saved straight to the shared Leaderboard.
 5. The scoreboard at the top updates live; the leading team gets a gold
-   highlight.
+   highlight. **Disputed a point?** Tap any score (or **✏️ Edit Scores**) to
+   adjust scores by hand — changes save straight to the shared Leaderboard.
 6. When all clues are used (or you hit **End Game** early), you get a final
    ranked scoreboard with confetti for the winner. **Play Again** clears the
    board for another round — it does **not** reset scores, since those are
    the shared, cumulative leaderboard for the whole event.
 
+## Editing questions on the fly (admin screen)
+
+On the live Cloudflare site, the Jeopardy start screen has a small
+**🔒 Edit questions** link (`jeopardy/admin.html`). Enter the admin password
+to edit the title, categories, clues, answers and point values from any
+device, including a phone. You can add, delete and reorder categories and
+clues. Hit **Save** (or Ctrl/⌘+S) and the game uses the new set the next time
+it's loaded.
+
+- Saved questions live in Cloudflare KV and take priority over `questions.js`.
+- **Reset to built-in questions** deletes the saved set, so the game goes back
+  to `questions.js`.
+- The password is the `ADMIN_PASSWORD` secret on the Worker (Cloudflare
+  dashboard: babyshowerapp, then Settings, then Variables and Secrets). It's
+  checked on the server and never appears in the code.
+- Running locally: `npx serve .` has no API, so the game uses `questions.js`
+  and the editor says it's unavailable. Use `npx wrangler dev` instead, with a
+  `.dev.vars` file containing `ADMIN_PASSWORD=whatever` (gitignored).
+
 ## How to customize it — this is the whole point!
 
-Everything content-wise lives in **`questions.js`**. Open it in any text
+The built-in questions live in **`questions.js`**. They're used whenever
+nothing has been saved from the admin screen. Open it in any text
 editor. You can change:
 
 - `title` / `subtitle` — shown on the start screen and browser tab.
@@ -106,6 +127,7 @@ jeopardy/
 ├── index.html      # structure/markup for all 3 screens + clue modal
 ├── style.css        # all visual styling — theme variables at the top
 ├── game.js          # game logic/state — rendering, scoring, screens
-├── questions.js      # ← YOUR CONTENT. Edit this one.
+├── questions.js      # ← Built-in content (fallback when nothing's saved in the admin screen)
+├── admin.html/.js/.css  # 🔒 Password-protected question editor
 └── README.md
 ```

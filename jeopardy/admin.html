@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Question Editor — Baby Shower Jeopardy</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔒</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin-page">
+
+  <!-- ===================== LOGIN ===================== -->
+  <section id="screen-login" class="screen active">
+    <form id="login-form" class="start-card login-card" autocomplete="off">
+      <a href="index.html" class="back-link">← Back to Jeopardy</a>
+      <div class="gate-icon">🔒</div>
+      <h1 class="game-title">Question Editor</h1>
+      <p class="game-subtitle">Hosts only — enter the admin password to edit categories, clues and answers.</p>
+      <label class="field-label" for="password">Password</label>
+      <input id="password" class="text-input" type="password" autocomplete="current-password" required />
+      <p id="login-error" class="form-error" role="alert"></p>
+      <button id="btn-login" type="submit" class="btn-primary">Unlock ✨</button>
+    </form>
+  </section>
+
+  <!-- ===================== EDITOR ===================== -->
+  <section id="screen-editor" class="screen">
+    <header class="editor-bar">
+      <div class="editor-bar-left">
+        <a href="index.html" class="btn-ghost btn-small" id="link-back">← Game</a>
+        <span id="save-status" class="save-status" aria-live="polite"></span>
+      </div>
+      <div class="editor-bar-right">
+        <button id="btn-lock" type="button" class="btn-ghost btn-small">🔒 Lock</button>
+        <button id="btn-save" type="button" class="btn-primary btn-save">Save</button>
+      </div>
+    </header>
+
+    <main class="editor-main">
+      <p id="editor-error" class="form-error editor-error" role="alert"></p>
+      <p id="source-note" class="source-note"></p>
+
+      <section class="editor-card">
+        <h2 class="editor-h2">Game details</h2>
+        <label class="field-label" for="game-title">Title</label>
+        <input id="game-title" class="text-input" type="text" maxlength="120" />
+        <label class="field-label" for="game-subtitle">Subtitle</label>
+        <input id="game-subtitle" class="text-input" type="text" maxlength="120" />
+      </section>
+
+      <div class="editor-section-head">
+        <h2 class="editor-h2">Categories</h2>
+        <span id="category-count" class="muted"></span>
+      </div>
+      <div id="categories"></div>
+
+      <button id="btn-add-category" type="button" class="btn-add">＋ Add category</button>
+
+      <div class="danger-zone">
+        <button id="btn-reset" type="button" class="btn-ghost btn-small">↩︎ Reset to built-in questions</button>
+      </div>
+    </main>
+  </section>
+
+  <script src="questions.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

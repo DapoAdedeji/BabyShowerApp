@@ -8,8 +8,11 @@
 // this page shows a gate screen pointing the host there first.
 // ============================================================
 
-(function () {
-  const DATA = window.GAME_DATA;
+(async function () {
+  // Questions edited in the admin screen (saved in Cloudflare KV) win over
+  // questions.js. If none are saved, or the API isn't reachable (e.g. running
+  // locally with `npx serve`), the game uses questions.js as before.
+  const DATA = await loadQuestions(window.GAME_DATA);
 
   let teams = [];       // local copy of ShowerSession teams: [{ name, score, color }]
   let usedClues = new Set(); // keys like "0-2"
@@ -29,6 +32,7 @@
   const boardEl = document.getElementById('board');
   const clueCounterEl = document.getElementById('clue-counter');
   const btnEndGame = document.getElementById('btn-end-game');
+  const btnEditScores = document.getElementById('btn-edit-scores');
 
   const modal = document.getElementById('clue-modal');
   const modalCategory = document.getElementById('modal-category');
@@ -131,7 +135,11 @@
     const maxScore = Math.max(...teams.map(t => t.score));
     scoreboardEl.innerHTML = '';
     teams.forEach(team => {
-      const chip = document.createElement('div');
+      // Chips are buttons: tapping any score opens the manual score editor.
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.title = 'Tap to edit scores';
+      chip.addEventListener('click', openScoreEditor);
       chip.className = 'score-chip' + (team.score === maxScore && maxScore > 0 ? ' leading' : '');
       chip.style.borderColor = team.color;
       chip.innerHTML = `
@@ -141,6 +149,20 @@
       scoreboardEl.appendChild(chip);
     });
   }
+
+  // ---------- Manual score edits (disputes) ----------
+  // Writes go straight to the shared leaderboard; we then re-sync our
+  // local copy so the scoreboard and award buttons match.
+  function openScoreEditor() {
+    ScoreEditor.open({
+      step: 100,
+      onSave: (updated) => {
+        teams = updated.map(t => ({ ...t }));
+        renderScoreboard();
+      }
+    });
+  }
+  btnEditScores.addEventListener('click', openScoreEditor);
 
   // ---------- Clue modal ----------
   function openClue(catIdx, clueIdx) {
@@ -264,5 +286,26 @@
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  async function loadQuestions(defaults) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    try {
+      const res = await fetch('/api/questions', { cache: 'no-store', signal: controller.signal });
+      if (!res.ok) return defaults;
+      const saved = await res.json();
+      if (!saved || !Array.isArray(saved.categories) || !saved.categories.length) return defaults;
+      return {
+        ...defaults,
+        title: saved.title || defaults.title,
+        subtitle: saved.subtitle || defaults.subtitle,
+        categories: saved.categories
+      };
+    } catch (e) {
+      return defaults;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 })();

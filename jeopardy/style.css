@@ -147,6 +147,17 @@ html, body {
 }
 .roster-hint a { color: var(--pink-deep); font-weight: 700; }
 
+.admin-link {
+  display: block;
+  margin-top: 18px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-decoration: none;
+  opacity: 0.7;
+}
+.admin-link:hover { color: var(--pink-deep); opacity: 1; }
+
 .team-input-row {
   display: flex;
   align-items: center;
@@ -258,7 +269,12 @@ html, body {
   border: 2px solid var(--blue-deep);
   text-align: center;
   min-width: 110px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease;
 }
+.score-chip:hover { transform: translateY(-2px); }
 .score-chip.leading {
   border-color: var(--butter-deep);
   background: linear-gradient(135deg, #fffef5, var(--butter));

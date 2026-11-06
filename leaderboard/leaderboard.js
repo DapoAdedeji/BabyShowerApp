@@ -19,8 +19,12 @@
 
   const leagueTableEl = document.getElementById('league-table');
   const btnEditTeams = document.getElementById('btn-edit-teams');
+  const btnEditScores = document.getElementById('btn-edit-scores');
+  const btnResetScores = document.getElementById('btn-reset-scores');
+  const btnResetAll = document.getElementById('btn-reset-all');
+  const DEFAULT_TEAM_NAMES = ['Team Onesie', 'Team Rattle', 'Team Bootie', 'Team Bibs'];
 
-  let teamNamesState = ['Team Onesie', 'Team Rattle', 'Team Bootie', 'Team Bibs'];
+  let teamNamesState = [...DEFAULT_TEAM_NAMES];
 
   function showScreen(screen) {
     [screenSetup, screenTable].forEach(s => s.classList.remove('active'));
@@ -92,6 +96,27 @@
     // Pre-fill setup with the current roster so edits are easy, not a blank slate.
     const current = ShowerSession.getTeams();
     teamNamesState = current.length ? current.map(t => t.name) : teamNamesState;
+    renderTeamInputs();
+    showScreen(screenSetup);
+  });
+
+  // Manual score fixes (disputes) — same popup the games use.
+  btnEditScores.addEventListener('click', () => {
+    ScoreEditor.open({ step: 100, onSave: renderTable });
+  });
+
+  // Zero every score but keep the team lineup.
+  btnResetScores.addEventListener('click', () => {
+    if (!confirm('Reset every team\'s score to 0? Teams stay the same.')) return;
+    ShowerSession.resetScores();
+    renderTable();
+  });
+
+  // Wipe teams AND scores — back to a blank setup screen.
+  btnResetAll.addEventListener('click', () => {
+    if (!confirm('Reset everything? This deletes all teams and scores.')) return;
+    ShowerSession.clear();
+    teamNamesState = [...DEFAULT_TEAM_NAMES];
     renderTeamInputs();
     showScreen(screenSetup);
   });

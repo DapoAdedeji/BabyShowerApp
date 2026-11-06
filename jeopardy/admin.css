@@ -1,0 +1,211 @@
+/* ============================================================
+   QUESTION EDITOR — styles (on top of style.css theme variables)
+   ============================================================ */
+
+/* `overflow-x: hidden` (from style.css) breaks the sticky save bar; `clip`
+   hides sideways overflow the same way without breaking it. */
+html:has(body.admin-page),
+body.admin-page { overflow-x: clip; }
+
+.admin-page .screen { align-items: flex-start; }
+.admin-page #screen-login { align-items: center; }
+
+.login-card { max-width: 440px; width: 100%; text-align: center; }
+
+.field-label {
+  display: block;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin: 14px 0 6px;
+}
+
+.text-input,
+.text-area {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--white);
+  border: 2px solid var(--lavender);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.text-area { resize: vertical; min-height: 64px; line-height: 1.35; }
+.text-input:focus,
+.text-area:focus { outline: none; border-color: var(--pink-deep); }
+.text-input.invalid,
+.text-area.invalid { border-color: #e5484d; background: #fff5f5; }
+
+.form-error {
+  min-height: 1.2em;
+  margin: 10px 0 14px;
+  color: #c62f3a;
+  font-weight: 700;
+}
+.form-error:empty { margin: 6px 0; }
+
+.muted { color: var(--ink-soft); font-weight: 600; font-size: 0.9rem; }
+
+.btn-small { padding: 8px 16px; font-size: 0.9rem; }
+
+/* ---------- Sticky top bar ---------- */
+#screen-editor { padding: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+
+.editor-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  background: rgba(255, 253, 251, 0.92);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px var(--shadow);
+}
+.editor-bar-left,
+.editor-bar-right { display: flex; align-items: center; gap: 10px; }
+
+.btn-save { padding: 10px 28px; font-size: 1.05rem; }
+.btn-save:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+
+.save-status { font-weight: 700; font-size: 0.9rem; color: var(--ink-soft); }
+.save-status.dirty { color: #b8860b; }
+.save-status.saved { color: #2f9e64; }
+
+/* ---------- Main column ---------- */
+.editor-main {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 20px 20px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+.editor-error:empty { display: none; }
+.editor-error {
+  background: #fff5f5;
+  border: 2px solid #f3b3b6;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+}
+
+.source-note:empty { display: none; }
+.source-note {
+  background: var(--butter);
+  border: 2px solid var(--butter-deep);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.editor-card {
+  background: rgba(255, 253, 251, 0.95);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px var(--shadow);
+  padding: 18px 20px 20px;
+  margin-bottom: 18px;
+}
+
+.editor-h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin: 0;
+}
+.editor-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 26px 4px 12px;
+}
+
+/* ---------- Category cards ---------- */
+.cat-card { padding: 0; overflow: hidden; border-left: 8px solid var(--blue-deep); }
+
+.cat-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+}
+.cat-toggle {
+  flex: none;
+  width: 36px; height: 36px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.cat-head .text-input { flex: 1; min-width: 0; font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; }
+.cat-meta { flex: none; white-space: nowrap; }
+
+.icon-btn {
+  flex: none;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--lavender);
+  background: var(--white);
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.icon-btn:hover { background: var(--lavender); }
+.icon-btn:disabled { opacity: 0.3; cursor: default; background: var(--white); }
+.icon-btn.danger:hover { background: #ffe1e3; border-color: #f3b3b6; }
+
+.cat-body { display: none; padding: 4px 14px 16px; border-top: 2px dashed var(--lavender); }
+.cat-card.open .cat-body { display: block; }
+
+/* ---------- Clue rows ---------- */
+.clue-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 1fr auto;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--lavender);
+}
+.clue-row:last-of-type { border-bottom: none; }
+.clue-row .field-label { margin-top: 0; }
+.clue-actions { display: flex; flex-direction: column; gap: 6px; padding-top: 22px; }
+
+.btn-add {
+  display: block;
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.6);
+  border: 2px dashed var(--pink-deep);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+.btn-add:hover { background: var(--pink); color: var(--ink); }
+.btn-add:disabled { opacity: 0.4; cursor: default; }
+
+.danger-zone { margin-top: 40px; text-align: center; }
+
+/* ---------- Phones ---------- */
+@media (max-width: 700px) {
+  .editor-bar { padding: 10px 16px; }
+  .editor-main { padding: 16px 16px 80px; }
+  .clue-row { grid-template-columns: 1fr auto; }
+  .clue-row .clue-value { grid-column: 1; }
+  .clue-row .clue-actions { grid-column: 2; grid-row: 1; flex-direction: row; padding-top: 22px; }
+  .clue-row .clue-text,
+  .clue-row .clue-answer { grid-column: 1 / -1; }
+  .cat-head { flex-wrap: wrap; }
+  .cat-head .text-input { flex-basis: calc(100% - 50px); }
+  .cat-meta { flex: 1; }
+}
