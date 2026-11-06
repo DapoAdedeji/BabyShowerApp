@@ -1,14 +1,22 @@
 // Cloudflare Workers config — tells `wrangler deploy` / `wrangler preview`
-// what to publish. This app is plain static files (no build step), so the
-// Worker just serves the repo root as static assets.
-// `name` must match the Worker's name in the Cloudflare dashboard.
+// what to publish. The site is plain static files (no build step) served
+// from the repo root; worker/index.js adds a small /api for the Jeopardy
+// question editor, backed by KV. `name` must match the Worker's name in the
+// Cloudflare dashboard. The admin password is the ADMIN_PASSWORD secret
+// (dashboard → Settings → Variables and Secrets), never stored here.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "babyshowerapp",
+  "main": "worker/index.js",
   "compatibility_date": "2026-10-01",
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
   },
+  // Where edited Jeopardy questions are saved.
+  "kv_namespaces": [
+    { "binding": "QUESTIONS" }
+  ],
   // Required by `wrangler preview` (used for non-production branch builds).
   // Empty is fine — assets and compatibility settings above are inherited.
   "previews": {},

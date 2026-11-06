@@ -8,8 +8,11 @@
 // this page shows a gate screen pointing the host there first.
 // ============================================================
 
-(function () {
-  const DATA = window.GAME_DATA;
+(async function () {
+  // Questions edited in the admin screen (saved in Cloudflare KV) win over
+  // questions.js. If none are saved, or the API isn't reachable (e.g. running
+  // locally with `npx serve`), the game uses questions.js as before.
+  const DATA = await loadQuestions(window.GAME_DATA);
 
   let teams = [];       // local copy of ShowerSession teams: [{ name, score, color }]
   let usedClues = new Set(); // keys like "0-2"
@@ -283,5 +286,26 @@
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  async function loadQuestions(defaults) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    try {
+      const res = await fetch('/api/questions', { cache: 'no-store', signal: controller.signal });
+      if (!res.ok) return defaults;
+      const saved = await res.json();
+      if (!saved || !Array.isArray(saved.categories) || !saved.categories.length) return defaults;
+      return {
+        ...defaults,
+        title: saved.title || defaults.title,
+        subtitle: saved.subtitle || defaults.subtitle,
+        categories: saved.categories
+      };
+    } catch (e) {
+      return defaults;
+    } finally {
+      clearTimeout(timer);
+    }
   }
 })();

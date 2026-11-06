@@ -23,6 +23,8 @@ BabyShowerApp/
 ├── app.js                # Welcome → menu transition logic
 ├── session.js              # Shared "who's playing" + scores (localStorage), used by every activity
 ├── score-editor.js         # Shared "✏️ Edit Scores" popup for settling disputes (Leaderboard + games)
+├── worker/index.js         # Cloudflare Worker: serves the site + the Jeopardy question API (KV)
+├── wrangler.jsonc          # Cloudflare deploy config
 ├── serve.json                # Disables `serve`'s clean-URL redirects (they break relative asset paths)
 ├── jeopardy/                   # ✅ Baby Jeopardy — fully built, see jeopardy/README.md
 ├── leaderboard/                  # ✅ Team setup + running league table — see below

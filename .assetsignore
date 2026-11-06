@@ -8,3 +8,5 @@ wrangler.jsonc
 node_modules
 *.md
 .wrangler
+worker
+.dev.vars

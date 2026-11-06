@@ -147,6 +147,17 @@ html, body {
 }
 .roster-hint a { color: var(--pink-deep); font-weight: 700; }
 
+.admin-link {
+  display: block;
+  margin-top: 18px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-decoration: none;
+  opacity: 0.7;
+}
+.admin-link:hover { color: var(--pink-deep); opacity: 1; }
+
 .team-input-row {
   display: flex;
   align-items: center;
