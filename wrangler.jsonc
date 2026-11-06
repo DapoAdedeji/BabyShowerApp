@@ -8,5 +8,8 @@
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "."
-  }
+  },
+  // Required by `wrangler preview` (used for non-production branch builds).
+  // Empty is fine — assets and compatibility settings above are inherited.
+  "previews": {}
 }
