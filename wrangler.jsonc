@@ -11,5 +11,10 @@
   },
   // Required by `wrangler preview` (used for non-production branch builds).
   // Empty is fine — assets and compatibility settings above are inherited.
-  "previews": {}
+  "previews": {},
+  // Gives each branch preview a URL like
+  // https://<branch>-babyshowerapp.<subdomain>.workers.dev
+  // (Worker-level setting: takes effect on a production `wrangler deploy`,
+  // or enable "Preview URLs" in the dashboard under Domains & Routes.)
+  "preview_urls": true
 }
