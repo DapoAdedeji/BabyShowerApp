@@ -29,6 +29,7 @@
   const boardEl = document.getElementById('board');
   const clueCounterEl = document.getElementById('clue-counter');
   const btnEndGame = document.getElementById('btn-end-game');
+  const btnEditScores = document.getElementById('btn-edit-scores');
 
   const modal = document.getElementById('clue-modal');
   const modalCategory = document.getElementById('modal-category');
@@ -131,7 +132,11 @@
     const maxScore = Math.max(...teams.map(t => t.score));
     scoreboardEl.innerHTML = '';
     teams.forEach(team => {
-      const chip = document.createElement('div');
+      // Chips are buttons: tapping any score opens the manual score editor.
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.title = 'Tap to edit scores';
+      chip.addEventListener('click', openScoreEditor);
       chip.className = 'score-chip' + (team.score === maxScore && maxScore > 0 ? ' leading' : '');
       chip.style.borderColor = team.color;
       chip.innerHTML = `
@@ -141,6 +146,20 @@
       scoreboardEl.appendChild(chip);
     });
   }
+
+  // ---------- Manual score edits (disputes) ----------
+  // Writes go straight to the shared leaderboard; we then re-sync our
+  // local copy so the scoreboard and award buttons match.
+  function openScoreEditor() {
+    ScoreEditor.open({
+      step: 100,
+      onSave: (updated) => {
+        teams = updated.map(t => ({ ...t }));
+        renderScoreboard();
+      }
+    });
+  }
+  btnEditScores.addEventListener('click', openScoreEditor);
 
   // ---------- Clue modal ----------
   function openClue(catIdx, clueIdx) {

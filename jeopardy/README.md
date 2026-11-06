@@ -39,7 +39,8 @@ hub's menu screen.
    points — or **No one got it** if nobody gets it. The tile is marked off
    either way. Points are saved straight to the shared Leaderboard.
 5. The scoreboard at the top updates live; the leading team gets a gold
-   highlight.
+   highlight. **Disputed a point?** Tap any score (or **✏️ Edit Scores**) to
+   adjust scores by hand — changes save straight to the shared Leaderboard.
 6. When all clues are used (or you hit **End Game** early), you get a final
    ranked scoreboard with confetti for the winner. **Play Again** clears the
    board for another round — it does **not** reset scores, since those are

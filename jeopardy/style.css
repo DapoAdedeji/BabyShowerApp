@@ -258,7 +258,12 @@ html, body {
   border: 2px solid var(--blue-deep);
   text-align: center;
   min-width: 110px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease;
 }
+.score-chip:hover { transform: translateY(-2px); }
 .score-chip.leading {
   border-color: var(--butter-deep);
   background: linear-gradient(135deg, #fffef5, var(--butter));

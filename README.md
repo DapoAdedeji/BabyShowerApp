@@ -22,6 +22,7 @@ BabyShowerApp/
 ├── style.css            # Shared theme — edit CSS variables here to re-skin everything
 ├── app.js                # Welcome → menu transition logic
 ├── session.js              # Shared "who's playing" + scores (localStorage), used by every activity
+├── score-editor.js         # Shared "✏️ Edit Scores" popup for settling disputes (Leaderboard + games)
 ├── serve.json                # Disables `serve`'s clean-URL redirects (they break relative asset paths)
 ├── jeopardy/                   # ✅ Baby Jeopardy — fully built, see jeopardy/README.md
 ├── leaderboard/                  # ✅ Team setup + running league table — see below
@@ -53,14 +54,21 @@ that same roster:
    exact lineup (no separate team-entry step) and **writes points straight
    back into the shared session**, so the Leaderboard reflects live scores
    during/after a game.
-3. The Leaderboard's **✏️ Edit Teams** button lets the host fix a typo or
-   change the lineup later — note this resets everyone's score to 0, since
-   it's meant for correcting the roster before/between games, not mid-round.
+3. The Leaderboard's buttons:
+   - **✏️ Edit Scores** — adjust any team's score by hand (±100 buttons or
+     type a number) to settle disputes. Nothing saves until **Save Scores**.
+     Jeopardy has the same popup: tap any score chip in the top left.
+   - **🔄 Reset Scores** — every score back to 0, same teams.
+   - **👥 Edit Teams** — fix a typo or change the lineup. Resets scores to 0,
+     since it's meant for between games, not mid-round.
+   - **🗑️ Reset Everything** — deletes teams and scores; back to setup.
 
 Future activities (Karaoke, etc.) should follow the same pattern: check
 `ShowerSession.hasTeams()` before anything else, read `ShowerSession.getTeams()`
 for the roster, and call `ShowerSession.updateScore(index, delta)` to award
-points. See `session.js` for the full API.
+points. To give a game manual score editing, include `../score-editor.js` after
+`session.js` and call `ScoreEditor.open({ onSave })`. See `session.js` for the
+full API.
 
 ## Customizing
 
