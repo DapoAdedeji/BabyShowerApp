@@ -1,0 +1,10 @@
+# Files in the repo root that should NOT be published to the site.
+.git
+.idea
+.DS_Store
+.gitignore
+.assetsignore
+wrangler.jsonc
+node_modules
+*.md
+.wrangler

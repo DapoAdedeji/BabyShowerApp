@@ -1,0 +1,12 @@
+// Cloudflare Workers config — tells `wrangler deploy` / `wrangler preview`
+// what to publish. This app is plain static files (no build step), so the
+// Worker just serves the repo root as static assets.
+// `name` must match the Worker's name in the Cloudflare dashboard.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "babyshowerapp",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "."
+  }
+}
