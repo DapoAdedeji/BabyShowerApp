@@ -19,9 +19,16 @@
   "kv_namespaces": [
     { "binding": "QUESTIONS", "id": "a8b5223cc6a9484795f3d4dbe774dbba" }
   ],
-  // Required by `wrangler preview` (used for non-production branch builds).
-  // Empty is fine — assets and compatibility settings above are inherited.
-  "previews": {},
+  // Settings for branch preview builds (`wrangler preview`). Assets and
+  // compatibility settings are inherited from above, but bindings are NOT,
+  // so the KV store is repeated here. Same id = previews share the live
+  // question set. Preview secrets are separate too:
+  //   npx wrangler preview base-config secret put ADMIN_PASSWORD
+  "previews": {
+    "kv_namespaces": [
+      { "binding": "QUESTIONS", "id": "a8b5223cc6a9484795f3d4dbe774dbba" }
+    ]
+  },
   // Gives each branch preview a URL like
   // https://<branch>-babyshowerapp.<subdomain>.workers.dev
   // (Worker-level setting: takes effect on a production `wrangler deploy`,
