@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Guess That Baby (Host) — Dapo & Desola's Baby Shower</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👶</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="host.css" />
+</head>
+<body class="gtb-host">
+  <div class="floaty-bg" aria-hidden="true">
+    <span>👶</span><span>📸</span><span>🍼</span><span>⭐</span><span>🧸</span><span>👶</span><span>📸</span><span>🍼</span>
+  </div>
+
+  <section id="screen-host" class="screen active">
+    <div class="host-wrap">
+      <header class="host-head">
+        <a href="/#menu" class="back-link">← Back to Menu</a>
+        <h1 class="host-title">👶 Guess That Baby</h1>
+        <p class="host-sub">Host controls — guests play on their phones</p>
+      </header>
+
+      <p id="host-error" class="host-error" role="alert" hidden></p>
+
+      <!-- No teams yet -->
+      <div id="no-teams" class="host-card host-center" hidden>
+        <div class="placeholder-icon">🏆</div>
+        <h2 class="host-h2">Set up the teams first</h2>
+        <p class="muted-text">Guess That Baby uses the Leaderboard's teams — one phone per team.</p>
+        <a class="btn-primary" href="/leaderboard/">Go to Leaderboard →</a>
+      </div>
+
+      <div id="host-main" hidden>
+        <!-- Round status + the one big next step -->
+        <section class="host-card host-status">
+          <div class="host-status-text">
+            <span id="status-pill" class="status-pill"></span>
+            <p id="status-help" class="status-help"></p>
+            <p id="demo-note" class="demo-note" hidden>Using the 30 demo photos &amp; names — real ones can be uploaded in the next version.</p>
+          </div>
+          <div id="status-actions" class="host-actions"></div>
+        </section>
+
+        <!-- Teams -->
+        <section class="host-card">
+          <div class="host-card-head">
+            <h2 class="host-h2">Teams</h2>
+            <span id="teams-summary" class="muted-text"></span>
+          </div>
+          <div id="team-rows" class="team-rows"></div>
+        </section>
+
+        <div class="host-danger">
+          <button type="button" id="btn-restart" class="btn-ghost btn-small">↺ Restart game</button>
+          <p class="muted-text small">Clears every phone and every answer, and starts a fresh round.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== REVEAL SHOW (full screen, for the TV) ===================== -->
+  <div id="show" class="show" hidden>
+    <div class="show-top">
+      <span id="show-count" class="show-count"></span>
+      <button type="button" id="show-exit" class="btn-ghost btn-small">✕ Exit</button>
+    </div>
+
+    <div id="show-photo-view" class="show-body">
+      <div class="show-photo"><img id="show-img" alt="" /></div>
+      <div class="show-side">
+        <p id="show-label" class="show-label"></p>
+        <p id="show-name" class="show-name"></p>
+        <button type="button" id="show-reveal" class="btn-primary">Reveal who it is 🥁</button>
+        <ul id="show-guesses" class="show-guesses"></ul>
+      </div>
+    </div>
+
+    <div id="show-results" class="show-results" hidden>
+      <h2 class="show-results-title">🎉 Final results 🎉</h2>
+      <ol id="results-list" class="results-list"></ol>
+    </div>
+
+    <div class="show-nav">
+      <button type="button" id="show-prev" class="btn-ghost">‹ Back</button>
+      <button type="button" id="show-next" class="btn-primary">Next ›</button>
+    </div>
+  </div>
+
+  <script src="/session.js"></script>
+  <script src="host.js"></script>
+</body>
+</html>

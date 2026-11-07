@@ -60,9 +60,27 @@ to a name.
    reveals**: each phone shows its score ("18 / 30 right!") and ✅/❌ with
    the correct name on every photo.
 
-Host controls (`/api/gtb/close`, `open`, `reveal`, `release`, `reset`) are
-in the Worker. Their admin screen comes next. **Release** frees a team
-whose phone died (answers are kept). **Reset** starts a fresh round.
+### Host view (`/guess-that-baby/host/`, admin only)
+
+The admin hub's **Guess That Baby** card opens the host view. Admins are
+always sent there, even if the same browser once joined a team as a guest,
+and guests can't open it.
+
+- **Teams:** each team shows whether its phone has joined and how many
+  photos it has answered. **Release phone** frees a team whose phone died
+  (answers are kept, and the next phone to pick that team carries on).
+- **Round controls:** 🔒 **Close round** (locks every phone), then 🎉
+  **Reveal answers** (every phone shows its score at the same moment).
+  **↩ Reopen** is there in case you close too early.
+- **▶ Reveal show:** full screen for the TV. It goes photo by photo:
+  "Baby #n is…", then a press reveals the name and each team's guess with
+  ✅/❌. It ends on the final results. Keys: → / Space for next, ← for back,
+  Esc to exit.
+- **🏆 Add points to Leaderboard:** **300 points per correct answer**
+  (`GTB_POINTS` in the Worker). It can only be done once per round, and has
+  to run on the device that runs the Leaderboard.
+- **↺ Restart game:** releases every phone, clears all answers and starts
+  a fresh round. Points already added stay on the Leaderboard.
 
 Until real photos and names are uploaded, it uses a **demo set**: 30
 placeholder images (`guess-that-baby/demo/`) and 30 made-up names, defined

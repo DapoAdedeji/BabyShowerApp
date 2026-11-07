@@ -50,6 +50,7 @@ const LIMITS = {
 const PUBLIC_PATHS = ['/welcome'];
 const PUBLIC_FILES = ['/style.css', '/signout.js', '/favicon.ico', '/robots.txt'];
 const GUEST_PATHS = ['/guest', '/guess-that-baby'];
+const GUEST_BLOCKED_PATHS = ['/guess-that-baby/host'];   // inside a guest path, but admin only
 
 export default {
   async fetch(request, env) {
@@ -79,9 +80,15 @@ async function handlePage(request, env, url) {
     return redirect(`/welcome/${next}`);
   }
 
-  if (session.role === 'guest' && !matches(path, GUEST_PATHS)) {
+  if (session.role === 'guest' && (!matches(path, GUEST_PATHS) || matches(path, GUEST_BLOCKED_PATHS))) {
     if (!isPageRequest(path)) return new Response('Not available for guests.', { status: 403 });
-    return redirect('/guest/');
+    return redirect(matches(path, GUEST_BLOCKED_PATHS) ? '/guess-that-baby/' : '/guest/');
+  }
+
+  // Admins get the host view of Guess That Baby, never the phone game —
+  // even if this browser once joined a team as a guest.
+  if (session.role === 'admin' && (path === '/guess-that-baby' || path === '/guess-that-baby/' || path === '/guess-that-baby/index.html')) {
+    return redirect('/guess-that-baby/host/');
   }
 
   // Ask browsers to re-check with us before reusing a cached page, so a
@@ -209,7 +216,12 @@ async function handleApi(request, env, url) {
 //   GET  /api/gtb/admin            full picture: claims, sheets, answer key
 //   POST /api/gtb/close | /open | /reveal | /reset
 //   POST /api/gtb/release {team}   free a team so another phone can claim it
+//   POST /api/gtb/award            mark this round's points as awarded (once);
+//                                  the host page then adds them to the
+//                                  Leaderboard (GTB_POINTS per correct answer)
 //   PUT  /api/gtb/config           replace photos / names / answer key
+
+const GTB_POINTS = 300; // per correct answer
 
 const GTB_DEMO_NAMES = [
   'Aunty Bisi', 'Uncle Tunde', 'Grandma Joy', 'Grandpa Femi', 'Cousin Tolu',
@@ -367,7 +379,30 @@ async function handleGtb(request, env, url) {
         correct: gtbScore(answers, config.key)
       };
     }));
-    return json({ status: state.status, round: state.round, config, teams: rows });
+    return json({
+      status: state.status,
+      round: state.round,
+      awarded: !!state.awarded,
+      pointsPerCorrect: GTB_POINTS,
+      demo: !!config.demo,
+      config,
+      teams: rows
+    });
+  }
+
+  if (route === 'award' && method === 'POST') {
+    const state = await gtbState(env);
+    if (state.status !== 'revealed') return json({ error: 'Reveal the answers before awarding points.' }, 409);
+    if (state.awarded) return json({ error: 'Points for this round were already awarded.' }, 409);
+    const err = await kvPut(env, 'gtb:state', { ...state, awarded: true, updatedAt: new Date().toISOString() });
+    if (err) return err;
+    const [config, teams] = await Promise.all([gtbConfig(env), gtbTeams(env)]);
+    const results = await Promise.all(teams.map(async t => {
+      const sheet = await env.QUESTIONS.get(gtbSheetKey(state.round, t.name), 'json');
+      const correct = gtbScore((sheet && sheet.answers) || {}, config.key);
+      return { name: t.name, correct, points: correct * GTB_POINTS };
+    }));
+    return json({ ok: true, results });
   }
 
   const STATUS_FOR = { close: 'closed', open: 'open', reveal: 'revealed' };
