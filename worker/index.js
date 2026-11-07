@@ -278,7 +278,13 @@ function b64urlDecode(str) {
 }
 
 // Constant-time comparison (hash first so lengths always match).
+// Leading/trailing whitespace is ignored on both sides: a password pasted
+// into the dashboard with a stray space or newline, or a phone keyboard
+// adding a space, shouldn't lock anyone out.
 async function safeEqual(a, b) {
+  a = String(a).trim();
+  b = String(b).trim();
+  if (!a || !b) return false;
   const enc = new TextEncoder();
   const [ha, hb] = await Promise.all([
     crypto.subtle.digest('SHA-256', enc.encode(a)),
