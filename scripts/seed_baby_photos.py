@@ -5,8 +5,10 @@ Seed Guess That Baby with real photos — re-run whenever new photos arrive.
     python3 scripts/seed_baby_photos.py "/path/to/Baby Photos"            # preview only
     python3 scripts/seed_baby_photos.py "/path/to/Baby Photos" --upload   # upload for real
 
-Each file's name is the answer ("Temi Coker.JPG" -> "Temi Coker").
+Each file's name is the answer, exactly as spelt ("Temi Coker.JPG" ->
+"Temi Coker", "kAI.JPG" -> "kAI").
 For every photo it:
+  * applies any crop listed in scripts/photo_crops.json (by filename),
   * rotates it upright (phone photos are often stored sideways),
   * converts to JPEG (HEIC/PNG too) and shrinks it to 1200px max,
   * strips hidden metadata (EXIF/GPS location, XMP, IPTC),
@@ -47,14 +49,19 @@ def namespace_id():
     return m.group(1)
 
 
-def clean_name(stem):
-    """'AIsha' -> 'Aisha', 'kAI' -> 'Kai'; leaves 'OG' and 'Temi Coker' alone."""
-    words = []
-    for w in stem.strip().split():
-        mixed = any(c.islower() for c in w) and any(c.isupper() for c in w[1:])
-        lower_start = w[:1].islower()
-        words.append(w.capitalize() if (mixed or lower_start) else w)
-    return ' '.join(words)
+def answer_for(filename):
+    """The answer is the filename as spelt, minus the extension and extra spaces."""
+    return ' '.join(os.path.splitext(filename)[0].split())
+
+
+def load_crops():
+    """{ "Dapo.JPG": { "top": 60, "left": 5, "width": 239, "height": 412 } } in
+    the original photo's pixels — e.g. to trim a phone screenshot's buttons."""
+    path = os.path.join(ROOT, 'scripts', 'photo_crops.json')
+    if not os.path.exists(path):
+        return {}
+    with open(path) as f:
+        return {k: v for k, v in json.load(f).items() if not k.startswith('_')}
 
 
 def sips(*args):
@@ -90,11 +97,13 @@ def strip_metadata(jpeg):
     return jpeg  # unexpected layout: keep the original rather than corrupt it
 
 
-def convert(src, dest):
-    """Upright, JPEG, <= MAX_SIDE px, metadata stripped. Returns bytes."""
+def convert(src, dest, crop=None):
+    """Cropped (optional), upright, JPEG, <= MAX_SIDE px, metadata stripped. Returns bytes."""
     shutil.copy(src, dest + '.src')
     work = dest + '.src'
     rotate = {3: 180, 6: 90, 8: 270}.get(orientation(work))
+    if crop:
+        sips('--cropOffset', str(crop['top']), str(crop['left']), '-c', str(crop['height']), str(crop['width']), work)
     dims = sips('-g', 'pixelWidth', '-g', 'pixelHeight', work)
     longest = max(int(x) for x in re.findall(r'pixel(?:Width|Height):\s*(\d+)', dims))
     resize = ['-Z', str(MAX_SIDE)] if longest > MAX_SIDE else []  # shrink only, never enlarge
@@ -130,7 +139,11 @@ def main():
     if len(files) > 60:
         sys.exit('The game supports up to 60 photos.')
 
-    names = [clean_name(os.path.splitext(f)[0]) for f in files]
+    names = [answer_for(f) for f in files]
+    crops = load_crops()
+    unknown = sorted(set(crops) - set(files))
+    if unknown:
+        print(f'Note: photo_crops.json mentions files that aren\'t in the folder: {", ".join(unknown)}')
     dupes = {n for n in names if names.count(n) > 1}
     if dupes:
         sys.exit(f'Two photos have the same name: {", ".join(sorted(dupes))}. Rename one so every answer is unique.')
@@ -145,16 +158,15 @@ def main():
     for n, idx in enumerate(order, start=1):
         src = os.path.join(args.folder, files[idx])
         photo_id = secrets.token_hex(8)
-        data = convert(src, os.path.join(out_dir, f'{n:02d}.jpg'))
+        data = convert(src, os.path.join(out_dir, f'{n:02d}.jpg'), crops.get(files[idx]))
         photos.append({'n': n, 'img': f'/api/gtb/photo/{photo_id}'})
         key[str(n)] = names[idx]
         entries.append({'key': f'gtb:photo:{photo_id}', 'value': base64.b64encode(data).decode(), 'base64': True})
-        manifest.append((n, names[idx], files[idx], len(data)))
+        manifest.append((n, names[idx], files[idx] in crops, len(data)))
 
     print(f'{len(files)} photos -> {out_dir}')
-    for n, name, original, size in manifest:
-        renamed = '' if os.path.splitext(original)[0] == name else f'   (file: {original})'
-        print(f'  #{n:<2} {name:<16} {size // 1024:>4} KB{renamed}')
+    for n, name, cropped, size in manifest:
+        print(f'  #{n:<2} {name:<16} {size // 1024:>4} KB{"   (cropped)" if cropped else ""}')
     with open(os.path.join(out_dir, 'answers.json'), 'w') as f:
         json.dump({'key': key}, f, indent=2)
 

@@ -89,7 +89,10 @@ and guests can't open it.
   a fresh round. Points already added stay on the Leaderboard.
 
 **Photos & answers** come from a folder of photos, each **named after the
-person** (`Temi Coker.JPG` means the answer is "Temi Coker"). Load them with:
+person**. The answer is the filename exactly as spelt (`Temi Coker.JPG`
+gives "Temi Coker", and `kAI.JPG` gives "kAI"). To crop a photo (for
+example a phone screenshot), add it to `scripts/photo_crops.json` and the
+crop is applied on every upload. Load them with:
 
 ```bash
 python3 scripts/seed_baby_photos.py "/path/to/Baby Photos"            # preview: processes + lists, uploads nothing
