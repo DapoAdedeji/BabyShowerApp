@@ -14,6 +14,33 @@ Open the printed `http://localhost:...` address on the screen you're
 projecting/casting with. (Double-clicking `index.html` also works, but
 `serve` avoids a couple of `file://` browser quirks.)
 
+## Who sees what (sign-in)
+
+Everyone lands on **`/welcome/`** and picks **Guest** or **Admin**, each with
+its own password. The Cloudflare Worker (`worker/index.js`) checks every
+request on the server, so typing a URL can't get round it:
+
+| | Can open |
+|---|---|
+| Not signed in | Only the welcome page |
+| **Guest** | Guest home (`/guest/`): **Guess That Baby** + a **view-only Leaderboard** (live, refreshes every 10s, no edit or reset) |
+| **Admin** | The full app: hub, Jeopardy (+ question editor), Leaderboard with editing, everything |
+
+Passwords are Worker secrets: **`ADMIN_PASSWORD`** and **`GUEST_PASSWORD`**
+(Cloudflare dashboard: babyshowerapp, then Settings, then Variables and
+Secrets; for branch previews, use `npx wrangler preview base-config secret put
+<NAME>`). Sign-in lasts 30 days per device. Changing either password signs
+everyone out.
+
+**Scores for guests:** the host's device stays the source of truth
+(`session.js`), and every score change is also copied to the server so
+guests' phones can show the live leaderboard. If two admin devices change
+scores, the most recent change wins.
+
+Locally, `npx serve .` has no Worker, so there's no sign-in and no API. Use
+`npx wrangler dev` with a `.dev.vars` file (gitignored) containing
+`ADMIN_PASSWORD=...` and `GUEST_PASSWORD=...`.
+
 ## How it's structured
 
 ```
@@ -28,7 +55,10 @@ BabyShowerApp/
 ├── serve.json                # Disables `serve`'s clean-URL redirects (they break relative asset paths)
 ├── jeopardy/                   # ✅ Baby Jeopardy — fully built, see jeopardy/README.md
 ├── leaderboard/                  # ✅ Team setup + running league table — see below
-├── slideshow/                      # 🚧 placeholder — "Coming soon"
+├── welcome/                # 🔐 Sign-in page: "Guest" or "Admin", each with its own password
+├── guest/                  # Guest home (2 cards) + view-only leaderboard (guest/leaderboard/)
+├── guess-that-baby/        # 🚧 placeholder — "Coming soon" (admins + guests)
+├── signout.js              # Shared "Sign out" button behaviour
 └── karaoke/                          # 🚧 placeholder — "Coming soon"
 ```
 
@@ -81,6 +111,6 @@ full API.
   variables in `jeopardy/style.css` (kept self-contained on purpose) — update
   both if you want a palette change to apply everywhere.
 - **Baby Jeopardy content** — see `jeopardy/README.md`, edit `jeopardy/questions.js`.
-- **Slideshow / Leaderboard / Karaoke** — not built yet. Each is currently a
+- **Guess That Baby / Karaoke** — not built yet. Each is currently a
   one-page "Coming soon" stub matching the app's theme, ready to be replaced
   with the real thing.

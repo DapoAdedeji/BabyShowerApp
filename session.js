@@ -18,6 +18,12 @@
 //   ShowerSession.setScores([n, ...])   -> overwrites every team's score (manual edits)
 //   ShowerSession.resetScores()       -> sets every score back to 0, keeps teams
 //   ShowerSession.clear()            -> wipes the session entirely
+//
+// SERVER COPY FOR GUESTS: this device (the host's) stays the source of
+// truth, but every change is also pushed to the server (PUT
+// /api/leaderboard) so guests' phones can show a live, view-only
+// leaderboard. If a push fails (offline), the next change or page load
+// retries it. Only admin pages include this file.
 // ============================================================
 
 window.ShowerSession = (function () {
@@ -38,7 +44,44 @@ window.ShowerSession = (function () {
 
   function persist(data) {
     localStorage.setItem(KEY, JSON.stringify(data));
+    scheduleSync();
   }
+
+  // ---------- Server sync (for the guest leaderboard) ----------
+  const SYNCED_KEY = 'babyShowerSession_synced';
+  let syncTimer = null;
+
+  function serverCopy() {
+    const data = load();
+    return JSON.stringify({ teams: data ? data.teams : [] });
+  }
+
+  function scheduleSync() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncNow, 400);
+  }
+
+  async function syncNow() {
+    const body = serverCopy();
+    let synced = null;
+    try { synced = localStorage.getItem(SYNCED_KEY); } catch (e) { /* ignore */ }
+    if (body === synced) return; // server already has exactly this
+    try {
+      const res = await fetch('/api/leaderboard', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        keepalive: true, // let it finish even if the page is navigating away
+        body
+      });
+      if (res.ok) {
+        try { localStorage.setItem(SYNCED_KEY, body); } catch (e) { /* ignore */ }
+      }
+    } catch (e) { /* offline or no API (e.g. local `npx serve`) — retry next time */ }
+  }
+
+  // Catch up on anything that didn't reach the server last time.
+  scheduleSync();
 
   function hasTeams() {
     const data = load();
@@ -92,6 +135,7 @@ window.ShowerSession = (function () {
 
   function clear() {
     localStorage.removeItem(KEY);
+    scheduleSync();
   }
 
   return { hasTeams, getTeams, save, updateScore, setScores, resetScores, clear, TEAM_COLORS };

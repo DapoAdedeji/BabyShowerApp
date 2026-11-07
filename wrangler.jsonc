@@ -2,8 +2,8 @@
 // what to publish. The site is plain static files (no build step) served
 // from the repo root; worker/index.js adds a small /api for the Jeopardy
 // question editor, backed by KV. `name` must match the Worker's name in the
-// Cloudflare dashboard. The admin password is the ADMIN_PASSWORD secret
-// (dashboard → Settings → Variables and Secrets), never stored here.
+// Cloudflare dashboard. Passwords are the ADMIN_PASSWORD and GUEST_PASSWORD
+// secrets (dashboard → Settings → Variables and Secrets), never stored here.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "babyshowerapp",
@@ -11,7 +11,10 @@
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": ".",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // Every request goes through worker/index.js first, so the sign-in
+    // gate (guest vs admin) is enforced on the server for every page.
+    "run_worker_first": true
   },
   // Where edited Jeopardy questions are saved. The id pins the
   // "babyshowerapp-questions" namespace so production AND branch previews
@@ -23,7 +26,7 @@
   // compatibility settings are inherited from above, but bindings are NOT,
   // so the KV store is repeated here. Same id = previews share the live
   // question set. Preview secrets are separate too:
-  //   npx wrangler preview base-config secret put ADMIN_PASSWORD
+  //   npx wrangler preview base-config secret put ADMIN_PASSWORD   (and GUEST_PASSWORD)
   "previews": {
     "kv_namespaces": [
       { "binding": "QUESTIONS", "id": "a8b5223cc6a9484795f3d4dbe774dbba" }
