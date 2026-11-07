@@ -41,6 +41,33 @@ Locally, `npx serve .` has no Worker, so there's no sign-in and no API. Use
 `npx wrangler dev` with a `.dev.vars` file (gitignored) containing
 `ADMIN_PASSWORD=...` and `GUEST_PASSWORD=...`.
 
+## Guess That Baby (guest phone game)
+
+`/guess-that-baby/`: one phone per team matches every numbered baby photo
+to a name.
+
+1. **Needs the Leaderboard.** Until the host has set up teams, the game
+   says so and can't start.
+2. **Claim your team.** The phone picks its team from the Leaderboard teams.
+   Claimed teams disappear from everyone else's list. A refresh brings the
+   phone straight back with its answers.
+3. **Match the babies.** One photo at a time (tap to zoom, swipe or ‹ › to
+   move), with a name dropdown underneath. A name already used on another
+   photo is greyed out ("used on #7"), because each name can only be used
+   once per team. The **1–30 tracker** pinned at the bottom shows answered
+   photos; tap a number to jump to it. Answers save to Cloudflare as you go.
+4. **Host closes the round**, which locks every phone. Then **the host
+   reveals**: each phone shows its score ("18 / 30 right!") and ✅/❌ with
+   the correct name on every photo.
+
+Host controls (`/api/gtb/close`, `open`, `reveal`, `release`, `reset`) are
+in the Worker. Their admin screen comes next. **Release** frees a team
+whose phone died (answers are kept). **Reset** starts a fresh round.
+
+Until real photos and names are uploaded, it uses a **demo set**: 30
+placeholder images (`guess-that-baby/demo/`) and 30 made-up names, defined
+in `worker/index.js`.
+
 ## How it's structured
 
 ```
@@ -57,7 +84,7 @@ BabyShowerApp/
 ├── leaderboard/                  # ✅ Team setup + running league table — see below
 ├── welcome/                # 🔐 Sign-in page: "Guest" or "Admin", each with its own password
 ├── guest/                  # Guest home (2 cards) + view-only leaderboard (guest/leaderboard/)
-├── guess-that-baby/        # 🚧 placeholder — "Coming soon" (admins + guests)
+├── guess-that-baby/        # 👶 Guess That Baby — the guest phone game (see below)
 ├── signout.js              # Shared "Sign out" button behaviour
 └── karaoke/                          # 🚧 placeholder — "Coming soon"
 ```

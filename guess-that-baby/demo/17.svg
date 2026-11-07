@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 750" width="600" height="750">
+  <rect width="600" height="750" fill="#ffe2cc"/>
+  <circle cx="300" cy="330" r="200" fill="#ffb085" opacity="0.35"/>
+  <text x="300" y="400" font-size="190" text-anchor="middle">🐥</text>
+  <text x="300" y="640" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-size="64" font-weight="700" fill="#4a3b52" text-anchor="middle">Baby #17</text>
+  <text x="300" y="700" font-family="Arial, sans-serif" font-size="28" fill="#7a6b82" text-anchor="middle">demo photo</text>
+</svg>

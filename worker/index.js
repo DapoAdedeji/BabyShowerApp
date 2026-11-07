@@ -20,6 +20,7 @@
 //   PUT    /api/questions       -> save questions           (admin)
 //   DELETE /api/questions       -> back to questions.js     (admin)
 //   POST   /api/admin/login     -> checks admin access (question editor)
+//   /api/gtb/...                 -> Guess That Baby (see the section below)
 //
 // Admin API calls are allowed with the admin cookie OR the header
 // "Authorization: Bearer <ADMIN_PASSWORD>".
@@ -177,7 +178,252 @@ async function handleApi(request, env, url) {
     }
   }
 
+  if (pathname.startsWith('/api/gtb/')) return handleGtb(request, env, url);
+
   return json({ error: 'Not found.' }, 404);
+}
+
+// ============================================================
+// GUESS THAT BABY
+// ============================================================
+// Each team (from the Leaderboard) claims ONE phone, then matches every
+// baby photo to a name. Each name can be used once per team.
+//
+// KV records (one per team where several phones write at once, because
+// KV can't safely merge simultaneous edits to the same record):
+//   gtb:config                     { photos:[{n,img}], names:[...], key:{n:name} }
+//                                  (missing -> built-in demo set; `key` is
+//                                  the answers and never goes to guests
+//                                  until the host reveals)
+//   gtb:state                      { round, status: open|closed|revealed }
+//   gtb:claim:<round>:<team>       { token }  which phone owns the team
+//   gtb:sheet:<round>:<team>       { answers:{ "1": "Name", ... } }
+// "Restart" starts a new round id, so old claims and sheets are ignored.
+//
+// Guest (or admin) endpoints — the phone identifies itself with the
+// headers X-GTB-Team + X-GTB-Token it got when claiming:
+//   GET  /api/gtb/state            everything the phone needs to draw the game
+//   POST /api/gtb/claim  {team}    claim a team -> { token }
+//   PUT  /api/gtb/answers {answers} save this team's sheet (only while open)
+// Admin endpoints:
+//   GET  /api/gtb/admin            full picture: claims, sheets, answer key
+//   POST /api/gtb/close | /open | /reveal | /reset
+//   POST /api/gtb/release {team}   free a team so another phone can claim it
+//   PUT  /api/gtb/config           replace photos / names / answer key
+
+const GTB_DEMO_NAMES = [
+  'Aunty Bisi', 'Uncle Tunde', 'Grandma Joy', 'Grandpa Femi', 'Cousin Tolu',
+  'Aunty Kemi', 'Uncle Segun', 'Sister Ada', 'Brother Chidi', 'Aunty Funmi',
+  'Uncle Kunle', 'Cousin Ife', 'Aunty Ronke', 'Uncle Bayo', 'Cousin Zara',
+  'Aunty Nkem', 'Uncle Dele', 'Cousin Remi', 'Aunty Yemi', 'Uncle Gbenga',
+  'Cousin Ola', 'Aunty Sade', 'Uncle Jide', 'Cousin Ami', 'Aunty Lola',
+  'Uncle Wale', 'Cousin Kiki', 'Aunty Dami', 'Uncle Niyi', 'Cousin Bola'
+];
+
+function gtbDemoConfig() {
+  const photos = [];
+  const key = {};
+  for (let n = 1; n <= 30; n++) {
+    photos.push({ n, img: `/guess-that-baby/demo/${n}.svg` });
+    // A fixed scramble so the answer isn't just "name n for photo n".
+    key[n] = GTB_DEMO_NAMES[(n * 7) % 30];
+  }
+  return { photos, names: [...GTB_DEMO_NAMES], key, demo: true };
+}
+
+async function gtbConfig(env) {
+  const saved = await env.QUESTIONS.get('gtb:config', 'json');
+  return saved || gtbDemoConfig();
+}
+async function gtbState(env) {
+  const saved = await env.QUESTIONS.get('gtb:state', 'json');
+  return saved || { round: 'r1', status: 'open' };
+}
+async function gtbTeams(env) {
+  const lb = await env.QUESTIONS.get(LEADERBOARD_KEY, 'json');
+  return lb && Array.isArray(lb.teams) ? lb.teams : [];
+}
+const gtbClaimKey = (round, team) => `gtb:claim:${round}:${encodeURIComponent(team)}`;
+const gtbSheetKey = (round, team) => `gtb:sheet:${round}:${encodeURIComponent(team)}`;
+
+// KV allows about one write per second to the same record; turn its
+// rate-limit error into a friendly 429 the phone retries.
+async function kvPut(env, key, value) {
+  try {
+    await env.QUESTIONS.put(key, JSON.stringify(value));
+    return null;
+  } catch (e) {
+    return json({ error: 'Saving too fast — retrying…' }, 429);
+  }
+}
+
+function gtbScore(answers, key) {
+  let correct = 0;
+  for (const n of Object.keys(key)) if (answers && answers[n] === key[n]) correct++;
+  return correct;
+}
+
+// Does this phone own a team? Returns the team name or null.
+async function gtbMyTeam(request, env, state) {
+  const team = decodeURIComponent(request.headers.get('X-GTB-Team') || '');
+  const token = request.headers.get('X-GTB-Token') || '';
+  if (!team || !token) return null;
+  const claim = await env.QUESTIONS.get(gtbClaimKey(state.round, team), 'json');
+  return claim && claim.token === token ? team : null;
+}
+
+async function handleGtb(request, env, url) {
+  const route = url.pathname.slice('/api/gtb/'.length);
+  const method = request.method;
+  const session = await readSession(request, env);
+  const isAdmin = (session && session.role === 'admin') || (await hasAdminBearer(request, env));
+  if (!session && !isAdmin) return json({ error: 'Please sign in.' }, 401);
+
+  // ---------- Phone (guest) endpoints ----------
+  if (route === 'state' && method === 'GET') {
+    const [config, state, teams] = await Promise.all([gtbConfig(env), gtbState(env), gtbTeams(env)]);
+    const claims = await Promise.all(teams.map(t => env.QUESTIONS.get(gtbClaimKey(state.round, t.name), 'json')));
+    const myTeam = await gtbMyTeam(request, env, state);
+    const sheet = myTeam ? (await env.QUESTIONS.get(gtbSheetKey(state.round, myTeam), 'json')) : null;
+    const answers = (sheet && sheet.answers) || {};
+    const revealed = state.status === 'revealed';
+    return json({
+      status: state.status,
+      round: state.round,
+      teams: teams.map((t, i) => ({ name: t.name, color: t.color, claimed: !!claims[i] })),
+      photos: config.photos,
+      names: [...config.names].sort((a, b) => a.localeCompare(b)),
+      myTeam,
+      answers,
+      demo: !!config.demo,
+      // Answers only leave the server once the host reveals them.
+      key: revealed ? config.key : null,
+      score: revealed && myTeam ? gtbScore(answers, config.key) : null
+    });
+  }
+
+  if (route === 'claim' && method === 'POST') {
+    let body = {};
+    try { body = await request.json(); } catch (e) { /* handled below */ }
+    const team = typeof body.team === 'string' ? body.team : '';
+    const [state, teams] = await Promise.all([gtbState(env), gtbTeams(env)]);
+    if (!teams.length) return json({ error: 'The Leaderboard isn\'t set up yet — ask the host to add the teams.' }, 409);
+    if (!teams.some(t => t.name === team)) return json({ error: 'That team isn\'t on the Leaderboard.' }, 400);
+    if (state.status !== 'open') return json({ error: 'This round is closed.' }, 409);
+
+    const claimKey = gtbClaimKey(state.round, team);
+    if (await env.QUESTIONS.get(claimKey)) return json({ error: 'Another phone has already joined as that team.' }, 409);
+    const token = crypto.randomUUID();
+    const err = await kvPut(env, claimKey, { token, at: new Date().toISOString() });
+    if (err) return err;
+    // Read back: if two phones picked the same team at the same instant,
+    // only the one whose token stuck gets it.
+    const check = await env.QUESTIONS.get(claimKey, 'json');
+    if (!check || check.token !== token) return json({ error: 'Another phone has already joined as that team.' }, 409);
+    return json({ ok: true, team, token });
+  }
+
+  if (route === 'answers' && method === 'PUT') {
+    const state = await gtbState(env);
+    const myTeam = await gtbMyTeam(request, env, state);
+    if (!myTeam) return json({ error: 'This phone isn\'t linked to a team any more.' }, 403);
+    if (state.status !== 'open') return json({ error: 'The round is closed — answers are locked.' }, 409);
+    let body = {};
+    try { body = await request.json(); } catch (e) { return json({ error: 'That wasn\'t valid JSON.' }, 400); }
+    const config = await gtbConfig(env);
+    const validNumbers = new Set(config.photos.map(p => String(p.n)));
+    const validNames = new Set(config.names);
+    const answers = {};
+    const used = new Set();
+    for (const [n, name] of Object.entries((body && body.answers) || {})) {
+      if (!name) continue;
+      if (!validNumbers.has(String(n))) return json({ error: `There's no photo #${n}.` }, 400);
+      if (!validNames.has(name)) return json({ error: `"${name}" isn't on the list.` }, 400);
+      if (used.has(name)) return json({ error: `"${name}" is used twice — each name can only be used once.` }, 400);
+      used.add(name);
+      answers[String(n)] = name;
+    }
+    const err = await kvPut(env, gtbSheetKey(state.round, myTeam), { answers, updatedAt: new Date().toISOString() });
+    return err || json({ ok: true });
+  }
+
+  // ---------- Host (admin) endpoints ----------
+  if (!isAdmin) return json({ error: 'Only the host can do that.' }, 403);
+
+  if (route === 'admin' && method === 'GET') {
+    const [config, state, teams] = await Promise.all([gtbConfig(env), gtbState(env), gtbTeams(env)]);
+    const rows = await Promise.all(teams.map(async t => {
+      const [claim, sheet] = await Promise.all([
+        env.QUESTIONS.get(gtbClaimKey(state.round, t.name), 'json'),
+        env.QUESTIONS.get(gtbSheetKey(state.round, t.name), 'json')
+      ]);
+      const answers = (sheet && sheet.answers) || {};
+      return {
+        name: t.name,
+        color: t.color,
+        claimed: !!claim,
+        answered: Object.keys(answers).length,
+        answers,
+        correct: gtbScore(answers, config.key)
+      };
+    }));
+    return json({ status: state.status, round: state.round, config, teams: rows });
+  }
+
+  const STATUS_FOR = { close: 'closed', open: 'open', reveal: 'revealed' };
+  if (STATUS_FOR[route] && method === 'POST') {
+    const state = await gtbState(env);
+    if (route === 'reveal' && state.status === 'open') return json({ error: 'Close the round before revealing.' }, 409);
+    const err = await kvPut(env, 'gtb:state', { ...state, status: STATUS_FOR[route], updatedAt: new Date().toISOString() });
+    return err || json({ ok: true, status: STATUS_FOR[route] });
+  }
+
+  if (route === 'reset' && method === 'POST') {
+    const round = `r${Date.now().toString(36)}`;
+    const err = await kvPut(env, 'gtb:state', { round, status: 'open', updatedAt: new Date().toISOString() });
+    return err || json({ ok: true, round });
+  }
+
+  if (route === 'release' && method === 'POST') {
+    let body = {};
+    try { body = await request.json(); } catch (e) { /* handled below */ }
+    if (typeof body.team !== 'string' || !body.team) return json({ error: 'Which team?' }, 400);
+    const state = await gtbState(env);
+    // Answers are kept: whichever phone claims the team next carries on.
+    await env.QUESTIONS.delete(gtbClaimKey(state.round, body.team));
+    return json({ ok: true });
+  }
+
+  if (route === 'config' && method === 'PUT') {
+    let body;
+    try { body = await request.json(); } catch (e) { return json({ error: 'That wasn\'t valid JSON.' }, 400); }
+    const result = validateGtbConfig(body);
+    if (result.error) return json({ error: result.error }, 400);
+    const err = await kvPut(env, 'gtb:config', result.config);
+    return err || json({ ok: true });
+  }
+
+  return json({ error: 'Not found.' }, 404);
+}
+
+function validateGtbConfig(body) {
+  if (!body || !Array.isArray(body.photos) || !Array.isArray(body.names)) return { error: 'Need photos and names.' };
+  if (body.photos.length < 1 || body.photos.length > 60) return { error: 'Between 1 and 60 photos.' };
+  const names = body.names.map(n => cleanText(n, 60)).filter(Boolean);
+  if (new Set(names).size !== names.length) return { error: 'Names must be unique.' };
+  const photos = [];
+  const key = {};
+  for (const p of body.photos) {
+    const n = Number(p && p.n);
+    const img = typeof (p && p.img) === 'string' ? p.img.slice(0, 500) : '';
+    if (!Number.isInteger(n) || n < 1 || n > 60) return { error: 'Photo numbers must be 1–60.' };
+    if (!img.startsWith('/') && !img.startsWith('https://')) return { error: `Photo #${n} needs an image.` };
+    const answer = body.key && body.key[n];
+    if (answer && !names.includes(answer)) return { error: `Photo #${n}'s answer isn't in the names list.` };
+    photos.push({ n, img });
+    if (answer) key[n] = answer;
+  }
+  return { config: { photos, names, key } };
 }
 
 // ---------- Sign-in ----------

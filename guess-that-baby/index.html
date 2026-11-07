@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="robots" content="noindex" />
   <title>Guess That Baby — Dapo & Desola's Baby Shower</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👶</text></svg>" />
@@ -10,20 +10,85 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="game.css" />
 </head>
-<body>
+<body class="gtb">
   <div class="floaty-bg" aria-hidden="true">
     <span>👶</span><span>📸</span><span>🍼</span><span>⭐</span><span>🧸</span><span>👶</span><span>📸</span><span>🍼</span>
   </div>
 
-  <section class="screen active">
+  <!-- ===================== LOADING ===================== -->
+  <section id="screen-loading" class="screen active">
+    <div class="placeholder-card"><div class="placeholder-icon gtb-spin">👶</div><p class="placeholder-sub">Loading the babies…</p></div>
+  </section>
+
+  <!-- ===================== MESSAGE (no leaderboard, all teams taken, errors) ===================== -->
+  <section id="screen-message" class="screen">
     <div class="placeholder-card">
-      <div class="placeholder-icon">👶</div>
-      <h1 class="placeholder-title">Guess That Baby</h1>
-      <p class="placeholder-sub">Coming soon — get ready to guess who's who from their baby photos! 📸</p>
-      <!-- "/" takes admins to the hub; the Worker sends guests on to /guest/ -->
-      <a class="btn-primary" href="/#menu">← Back</a>
+      <div class="placeholder-icon" id="message-icon">🙋</div>
+      <h1 class="placeholder-title" id="message-title"></h1>
+      <p class="placeholder-sub" id="message-text"></p>
+      <a class="btn-ghost" href="/#menu">← Back</a>
     </div>
   </section>
+
+  <!-- ===================== PICK YOUR TEAM ===================== -->
+  <section id="screen-team" class="screen">
+    <div class="placeholder-card gtb-team-card">
+      <a href="/#menu" class="back-link">← Back</a>
+      <div class="placeholder-icon">👶</div>
+      <h1 class="placeholder-title">Guess That Baby</h1>
+      <p class="placeholder-sub">Match every baby photo to the right name. Each name can only be used once!</p>
+      <p id="team-notice" class="gtb-notice" hidden></p>
+      <h2 class="gtb-h2">Which team are you on?</h2>
+      <p class="gtb-hint">One phone per team. Once you pick, your team is locked to this phone.</p>
+      <div id="team-list" class="gtb-team-list"></div>
+      <p id="team-error" class="signin-error" role="alert"></p>
+    </div>
+  </section>
+
+  <!-- ===================== THE GAME ===================== -->
+  <section id="screen-game" class="screen gtb-game-screen">
+    <header class="gtb-top">
+      <a href="/#menu" class="gtb-back" aria-label="Back to menu">←</a>
+      <span class="gtb-team-chip"><span class="gtb-dot" id="my-team-dot"></span><span id="my-team-name"></span></span>
+      <span class="gtb-progress" id="progress"></span>
+    </header>
+
+    <div id="status-banner" class="gtb-banner" hidden></div>
+
+    <main class="gtb-main">
+      <figure class="gtb-photo-card">
+        <button type="button" class="gtb-photo-btn" id="photo-btn" aria-label="Zoom in on this photo">
+          <img id="photo" alt="" />
+          <span class="gtb-zoom-hint" aria-hidden="true">🔍 Tap to zoom</span>
+        </button>
+        <figcaption class="gtb-photo-label" id="photo-label"></figcaption>
+      </figure>
+
+      <p id="reveal-line" class="gtb-reveal-line" hidden></p>
+      <label class="gtb-select-label" for="name-select" id="select-label">Who is this baby?</label>
+      <select id="name-select" class="gtb-select"></select>
+
+      <div class="gtb-nav">
+        <button type="button" class="btn-ghost" id="btn-prev">‹ Prev</button>
+        <span id="save-status" class="gtb-save" aria-live="polite"></span>
+        <button type="button" class="btn-ghost" id="btn-next">Next ›</button>
+      </div>
+    </main>
+
+    <!-- Numbered tracker, pinned to the bottom of the phone -->
+    <nav class="gtb-tracker" aria-label="Baby photos">
+      <div class="gtb-tracker-scroll" id="tracker"></div>
+    </nav>
+  </section>
+
+  <!-- Full-screen zoom -->
+  <div id="zoom" class="gtb-zoom" hidden>
+    <button type="button" class="gtb-zoom-close" id="zoom-close" aria-label="Close">✕</button>
+    <img id="zoom-img" alt="" />
+  </div>
+
+  <script src="game.js"></script>
 </body>
 </html>
