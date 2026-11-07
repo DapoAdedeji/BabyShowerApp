@@ -419,7 +419,7 @@
         // Password changed or session lost — ask again, keep the edits in memory.
         password = '';
         storeDel(PW_KEY);
-        editorError.textContent = 'The password was rejected. Lock and unlock again — your edits are still here until you leave this page.';
+        editorError.textContent = 'You\'ve been signed out. Lock and unlock again — your edits are still here until you leave this page.';
         setStatus('Not saved', 'dirty');
         return;
       }
@@ -462,11 +462,17 @@
   }
 
   // ---------- Init ----------
-  const remembered = storeGet(PW_KEY);
-  if (remembered) {
-    tryLogin(remembered);
-  } else {
+  // Signed in to the site as Admin? The server accepts that sign-in, so go
+  // straight to the editor. Otherwise fall back to the password screen.
+  async function init() {
+    const remembered = storeGet(PW_KEY);
+    if (remembered) return tryLogin(remembered);
+    try {
+      const res = await api('POST', '/api/admin/login');
+      if (res.ok) return await openEditor();
+    } catch (e) { /* not signed in as admin, or no API */ }
     show(screenLogin);
     passwordInput.focus();
   }
+  init();
 })();

@@ -1,7 +1,7 @@
 /* ============================================================
    BABY SHOWER EVENT APP — SHARED SHELL STYLES
    Used by the hub (this file) and by the "coming soon" feature
-   pages (slideshow/leaderboard/karaoke), which link to this file
+   pages (welcome/guest/leaderboard/karaoke/...), which link to this file
    via ../style.css. The jeopardy/ feature is self-contained with
    its own stylesheet — don't need to touch this file for that.
 
@@ -441,8 +441,127 @@ html, body {
   margin: 0 0 28px;
 }
 
+/* ---------- Sign-in (welcome) page ---------- */
+.signin-card { padding: 44px 40px 40px; }
+.signin-title { font-size: clamp(1.9rem, 5.5vw, 2.8rem); margin-bottom: 24px; }
+
+.role-fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+.signin-question {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1.3;
+  color: var(--ink);
+  margin: 0 auto 16px;
+  padding: 0;
+}
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.role-option { position: relative; cursor: pointer; }
+.role-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.role-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 24px 16px 20px;
+  background: var(--white);
+  border: 3px solid var(--lavender);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 20px var(--shadow);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.role-option:hover .role-card { transform: translateY(-3px); border-color: var(--pink-deep); }
+.role-option input:focus-visible + .role-card { outline: 3px solid var(--blue-deep); outline-offset: 3px; }
+.role-option input:checked + .role-card {
+  border-color: var(--pink-deep);
+  background: linear-gradient(135deg, #fff, #fff0f7);
+  box-shadow: 0 0 0 4px rgba(255, 158, 207, 0.3), 0 12px 26px var(--shadow);
+  transform: translateY(-3px);
+}
+.role-icon { font-size: 2.6rem; line-height: 1.1; }
+.role-name { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; color: var(--ink); }
+.role-desc { font-size: 0.9rem; font-weight: 600; color: var(--ink-soft); line-height: 1.35; }
+
+.password-step { margin-top: 26px; animation: step-in 0.25s ease; }
+@keyframes step-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.field-label-center { display: block; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
+.signin-input {
+  width: 100%;
+  max-width: 340px;
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+  background: var(--white);
+  border: 2px solid var(--lavender);
+  border-radius: 999px;
+  padding: 12px 18px;
+}
+.signin-input:focus { outline: none; border-color: var(--pink-deep); box-shadow: 0 0 0 4px rgba(255, 158, 207, 0.25); }
+.signin-error { min-height: 1.3em; margin: 10px 0 16px; color: #c62f3a; font-weight: 700; }
+.btn-primary:disabled { opacity: 0.6; cursor: default; transform: none; }
+
+.signed-in-note {
+  background: var(--mint);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 700;
+  margin: -8px auto 20px;
+  display: inline-block;
+}
+.signed-in-note a { color: var(--ink); }
+.signed-in-note[hidden] { display: none; }
+
+/* ---------- Guest pages ---------- */
+.signout-btn { margin-top: 28px; font-size: 0.9rem; }
+.hub-signout { text-align: center; margin-top: 24px; }
+
+.league-empty { color: var(--ink-soft); font-weight: 600; margin: 8px 0 18px; }
+.league-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin: 4px 0 0;
+}
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--mint-deep);
+  animation: live-pulse 1.6s ease-in-out infinite;
+}
+.league-status.offline .live-dot { background: #e5484d; animation: none; }
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(143, 224, 179, 0.7); }
+  50%      { box-shadow: 0 0 0 6px rgba(143, 224, 179, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot, .password-step { animation: none; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 640px) {
   .menu-grid { grid-template-columns: 1fr; }
   .welcome-card, .placeholder-card { padding: 36px 26px; }
+  .signin-card { padding: 32px 18px 28px; }
+  .league-card { padding: 28px 16px; }
+  .league-row { gap: 10px; padding: 12px 14px; }
+  .role-grid { gap: 10px; }
+  .role-card { padding: 18px 10px 16px; }
+  .role-icon { font-size: 2.2rem; }
 }

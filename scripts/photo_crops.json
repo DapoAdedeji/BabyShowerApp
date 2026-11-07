@@ -1,0 +1,4 @@
+{
+  "_about": "Optional crops for Guess That Baby photos, applied by seed_baby_photos.py. Key = photo filename; numbers are pixels in the original photo.",
+  "Dapo.JPG": { "top": 60, "left": 5, "width": 239, "height": 412 }
+}
