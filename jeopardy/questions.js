@@ -1,10 +1,10 @@
 // ============================================================
 // BABY SHOWER JEOPARDY — GAME CONTENT
 // ============================================================
-// This is the ONLY file you need to edit to make this your own.
-// Everything below is placeholder trivia — swap it out for your
-// own categories, clues, answers, point values, even the title
-// and currency label. The app reads this file to build the board.
+// These are the BUILT-IN questions. Questions saved from the
+// admin screen (jeopardy/admin.html) take priority over this file;
+// this set is used when nothing is saved there, and it's what
+// "Reset to built-in questions" goes back to.
 //
 // STRUCTURE:
 //   - Exactly 5 clues per category (classic Jeopardy column of 5).
@@ -29,63 +29,63 @@ window.GAME_DATA = {
 
   categories: [
     {
+      title: "Baby Basics",
+      clues: [
+        { value: 100, clue: "A pregnancy usually lasts about this many weeks", answer: "40" },
+        { value: 200, clue: "The position babies should sleep in", answer: "Flat on their backs (supine position)" },
+        { value: 300, clue: "The soft spot on top of a newborn's head is called this", answer: "Fontanelle" },
+        { value: 400, clue: "Most babies get their first tooth at about this age", answer: "Around 6 months" },
+        { value: 500, clue: "The average number of nappies a newborn uses per day", answer: "8-12" }
+      ]
+    },
+    {
       title: "Nursery Rhymes",
       clues: [
-        { value: 100, clue: "This rhyme features a cow jumping over a celestial body.", answer: "What is “Hey Diddle Diddle”?" },
-        { value: 200, clue: "This egg-shaped character “had a great fall” and couldn’t be put back together.", answer: "Who is Humpty Dumpty?" },
-        { value: 300, clue: "In this rhyme, a spider keeps climbing up this part of the house, despite the rain.", answer: "What is a waterspout? (“The Itsy Bitsy Spider”)" },
-        { value: 400, clue: "This lullaby about a star shares its exact tune with the alphabet song.", answer: "What is “Twinkle Twinkle Little Star”?" },
-        { value: 500, clue: "In this lullaby, a baby is rocked in a treetop cradle that falls “down” when the bough breaks.", answer: "What is “Rock-a-bye Baby”?" }
+        { value: 100, clue: "Twinkle, twinkle, little ___", answer: "Star" },
+        { value: 200, clue: "Humpty Dumpty sat on one of these", answer: "A wall" },
+        { value: 300, clue: "What happens when the bough breaks in \"Rock-a-bye Baby\"", answer: "The cradle falls" },
+        { value: 400, clue: "Which little piggy had roast beef", answer: "The third piggy" },
+        { value: 500, clue: "She sat on a tuffet eating curds and whey", answer: "Little Miss Muffet" }
+      ]
+    },
+    {
+      title: "Famous Babies",
+      clues: [
+        { value: 100, clue: "Peppa Pig's little brother", answer: "George" },
+        { value: 200, clue: "This baby elephant with huge ears learns to fly", answer: "Dumbo" },
+        { value: 300, clue: "Tommy Pickles leads the babies in this cartoon", answer: "Rugrats" },
+        { value: 400, clue: "The real name of \"Baby Yoda\" in The Mandalorian", answer: "Grogu" },
+        { value: 500, clue: "The 1987 film with Tom Selleck, Steve Guttenberg and Ted Danson", answer: "Three Men and a Baby" }
       ]
     },
     {
       title: "Baby Animals",
       clues: [
-        { value: 100, clue: "The name for a baby dog.", answer: "What is a puppy?" },
-        { value: 200, clue: "The name for a baby cat.", answer: "What is a kitten?" },
-        { value: 300, clue: "The name for a baby kangaroo.", answer: "What is a joey?" },
-        { value: 400, clue: "The name for a baby deer.", answer: "What is a fawn?" },
-        { value: 500, clue: "The name for a baby owl.", answer: "What is an owlet?" }
+        { value: 100, clue: "A baby sheep", answer: "Lamb" },
+        { value: 200, clue: "A baby kangaroo", answer: "Joey" },
+        { value: 300, clue: "A baby goat", answer: "Kid" },
+        { value: 400, clue: "A baby horse", answer: "Foal" },
+        { value: 500, clue: "A baby owl", answer: "Owlet" }
       ]
     },
     {
-      title: "Celebrity Baby Names",
+      title: "Mummy and Daddy to Be",
       clues: [
-        { value: 100, clue: "Gwyneth Paltrow and Chris Martin named their daughter after this fruit.", answer: "What is Apple?" },
-        { value: 200, clue: "Kim Kardashian and Kanye West’s first daughter shares her name with this compass direction.", answer: "What is North (West)?" },
-        { value: 300, clue: "Beyoncé and Jay-Z’s twins are named Rumi and this.", answer: "What is Sir?" },
-        { value: 400, clue: "Elon Musk and Grimes’s son X Æ A-12 goes by this one-letter nickname.", answer: "What is X?" },
-        { value: 500, clue: "This “Friends” actress named her daughter with David Arquette Coco Riley.", answer: "Who is Courteney Cox?" }
+        { value: 100, clue: "Desola and Dapo first met in this place (city)", answer: "Bristol" },
+        { value: 200, clue: "Dapo's favourite takeaway", answer: "Chinese Rice and Ribs" },
+        { value: 300, clue: "The first thing Desola craved during pregnancy", answer: "Doritos" },
+        { value: 400, clue: "Desola and Dapo's first international holiday destination", answer: "Cyprus" },
+        { value: 500, clue: "The baby's due date", answer: "25th January" }
       ]
     },
     {
-      title: "Guess That Baby Gear",
+      title: "Baby Word Scramble",
       clues: [
-        { value: 100, clue: "This gear keeps baby secured while you push them around the block.", answer: "What is a stroller?" },
-        { value: 200, clue: "This soft fabric square catches spit-up on your shoulder.", answer: "What is a burp cloth?" },
-        { value: 300, clue: "This device lets parents hear baby crying from another room.", answer: "What is a baby monitor?" },
-        { value: 400, clue: "This piece of furniture has rails to keep baby safely contained for sleep.", answer: "What is a crib?" },
-        { value: 500, clue: "This gear straps to the chest or back to carry baby hands-free.", answer: "What is a baby carrier?" }
-      ]
-    },
-    {
-      title: "Pregnancy & Due Dates",
-      clues: [
-        { value: 100, clue: "The average human pregnancy lasts this many weeks.", answer: "What is 40 weeks?" },
-        { value: 200, clue: "This final trimester runs from week 28 until birth.", answer: "What is the third trimester?" },
-        { value: 300, clue: "This medical professional specializes in delivering babies.", answer: "What is an OB-GYN (or midwife)?" },
-        { value: 400, clue: "This imaging test, often done around 20 weeks, can reveal baby’s sex.", answer: "What is an ultrasound?" },
-        { value: 500, clue: "This hormone detected in pregnancy tests stands for human chorionic this.", answer: "What is gonadotropin (hCG)?" }
-      ]
-    },
-    {
-      title: "Mom & Dad-isms",
-      clues: [
-        { value: 100, clue: "This fluid-filled bag typically “breaks” shortly before or during labor.", answer: "What is the water (amniotic sac)?" },
-        { value: 200, clue: "This term describes a baby's first bowel movement, a sticky dark substance.", answer: "What is meconium?" },
-        { value: 300, clue: "This soft spot on a newborn's skull hasn't fully fused yet.", answer: "What is the fontanelle?" },
-        { value: 400, clue: "This nighttime task involves getting up every few hours to feed a newborn.", answer: "What is a night feed?" },
-        { value: 500, clue: "This swaddling technique mimics the womb to help babies sleep longer.", answer: "What is swaddling?" }
+        { value: 100, clue: "YMDUM", answer: "DUMMY" },
+        { value: 200, clue: "ETRLAT", answer: "RATTLE" },
+        { value: 300, clue: "TNOBNE", answer: "BONNET" },
+        { value: 400, clue: "RYSRUEN", answer: "NURSERY" },
+        { value: 500, clue: "LERTSROL", answer: "STROLLER" }
       ]
     }
   ]

@@ -393,6 +393,7 @@ html, body {
   text-align: center;
   border: 4px solid var(--butter-deep);
   animation: pop-in 0.25s ease;
+  position: relative;
 }
 @keyframes pop-in {
   from { transform: scale(0.85); opacity: 0; }
@@ -460,6 +461,139 @@ html, body {
   transition: background 0.15s ease, transform 0.15s ease;
 }
 .award-btn:hover { background: var(--mint-deep); color: var(--white); transform: translateY(-2px); }
+
+/* ---------- Timer: board-header default setting ---------- */
+.timer-setting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.7);
+  border: 2px solid var(--lavender);
+  border-radius: 999px;
+  padding: 4px 6px 4px 12px;
+}
+.timer-setting-label { font-size: 1rem; }
+.timer-setting-value {
+  font-family: var(--font-display);
+  font-weight: 800;
+  min-width: 3.2em;
+  text-align: center;
+  color: var(--ink);
+}
+.btn-mini {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 2px solid var(--lavender);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn-mini:hover { background: var(--lavender); }
+.btn-mini:disabled { opacity: 0.35; cursor: default; background: var(--white); }
+
+/* ---------- Timer: inside the question card ---------- */
+.q-timer {
+  margin: 22px auto 18px;
+  max-width: 420px;
+}
+.q-timer-row { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.q-timer-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 7vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1;
+  min-width: 3.2em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.q-timer-bar {
+  height: 12px;
+  margin: 12px 0 14px;
+  border-radius: 999px;
+  background: var(--lavender);
+  overflow: hidden;
+}
+.q-timer-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mint-deep), var(--blue-deep));
+  transform-origin: left center;
+}
+.q-timer-controls { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.btn-timer {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--butter);
+  border: 2px solid var(--butter-deep);
+  border-radius: 999px;
+  padding: 8px 24px;
+  cursor: pointer;
+}
+.btn-timer:hover { background: var(--butter-deep); }
+
+/* Last 5 seconds: red + pulsing */
+.q-timer.warning .q-timer-display { color: #e5484d; animation: timer-pulse 1s ease-in-out infinite; }
+.q-timer.warning .q-timer-fill { background: linear-gradient(90deg, #ff7a7f, #e5484d); }
+@keyframes timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.12); }
+}
+
+/* Paused: dim the digits a little */
+.q-timer.paused .q-timer-display { opacity: 0.55; }
+
+/* Time's up! */
+.times-up { display: none; }
+.q-timer.done .q-timer-row,
+.q-timer.done .q-timer-bar { display: none; }
+.q-timer.done .times-up {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 8vw, 4.2rem);
+  font-weight: 800;
+  line-height: 1.05;
+  color: #e5484d;
+  letter-spacing: 0.02em;
+  text-shadow: 0 4px 0 #ffd0d2;
+  margin-bottom: 12px;
+  animation: times-up-pop 0.5s cubic-bezier(.2,1.6,.4,1) both, times-up-wiggle 0.6s ease-in-out 0.5s 3;
+}
+@keyframes times-up-pop {
+  from { transform: scale(0.2); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes times-up-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25%      { transform: rotate(-4deg) scale(1.06); }
+  75%      { transform: rotate(4deg) scale(1.06); }
+}
+.modal-card.times-up-flash { animation: card-flash 0.5s ease-in-out 4, card-shake 0.5s ease-in-out; }
+@keyframes card-flash {
+  0%, 100% { border-color: var(--butter-deep); box-shadow: 0 24px 60px rgba(0,0,0,0.3); }
+  50%      { border-color: #e5484d; box-shadow: 0 0 0 10px rgba(229,72,77,0.25), 0 24px 60px rgba(0,0,0,0.3); }
+}
+@keyframes card-shake {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-10px); }
+  40%      { transform: translateX(10px); }
+  60%      { transform: translateX(-6px); }
+  80%      { transform: translateX(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .q-timer.warning .q-timer-display,
+  .q-timer.done .times-up,
+  .modal-card.times-up-flash { animation: none; }
+}
 
 /* ---------- Final screen ---------- */
 .final-card {

@@ -50,6 +50,13 @@
     <header class="board-header">
       <div class="scoreboard" id="scoreboard"></div>
       <div class="board-header-actions">
+        <div class="timer-setting" role="group" aria-label="Default question timer">
+          <span class="timer-setting-label">⏱</span>
+          <button type="button" class="btn-mini" id="btn-default-minus" aria-label="Shorter default timer">−</button>
+          <span id="default-timer-label" class="timer-setting-value" aria-live="polite">30s</span>
+          <button type="button" class="btn-mini" id="btn-default-plus" aria-label="Longer default timer">+</button>
+          <button type="button" class="btn-mini" id="btn-sound" aria-label="Mute time's-up sound" title="Time's-up sound on/off">🔔</button>
+        </div>
         <button id="btn-edit-scores" class="btn-ghost">✏️ Edit Scores</button>
         <span class="clue-counter" id="clue-counter"></span>
         <a href="../index.html#menu" class="btn-ghost">Menu</a>
@@ -71,6 +78,21 @@
       <div class="modal-body">
         <p class="modal-clue" id="modal-clue"></p>
         <p class="modal-answer" id="modal-answer"></p>
+      </div>
+
+      <!-- Question timer: starts at the board's default, adjustable per question -->
+      <div class="q-timer" id="q-timer">
+        <div class="q-timer-row">
+          <button type="button" class="btn-mini q-adjust" id="btn-timer-minus" aria-label="5 seconds less">−5</button>
+          <div class="q-timer-display" id="timer-display" role="timer" aria-live="off">0:30</div>
+          <button type="button" class="btn-mini q-adjust" id="btn-timer-plus" aria-label="5 seconds more">+5</button>
+        </div>
+        <div class="q-timer-bar" aria-hidden="true"><div class="q-timer-fill" id="timer-fill"></div></div>
+        <div class="times-up" id="times-up" role="alert" aria-live="assertive"></div>
+        <div class="q-timer-controls">
+          <button type="button" class="btn-timer" id="btn-timer-start">▶ Start timer</button>
+          <button type="button" class="btn-mini" id="btn-timer-reset" aria-label="Reset timer" title="Reset timer">↺</button>
+        </div>
       </div>
 
       <button id="btn-reveal" class="btn-primary">Reveal Answer</button>
