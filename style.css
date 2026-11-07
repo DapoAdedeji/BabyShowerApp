@@ -524,7 +524,6 @@ html, body {
 .signed-in-note[hidden] { display: none; }
 
 /* ---------- Guest pages ---------- */
-.names-inline { color: var(--pink-deep); text-shadow: 2px 2px 0 var(--butter); }
 .signout-btn { margin-top: 28px; font-size: 0.9rem; }
 .hub-signout { text-align: center; margin-top: 24px; }
 
