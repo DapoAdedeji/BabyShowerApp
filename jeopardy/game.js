@@ -43,6 +43,20 @@
   const awardSection = document.getElementById('award-section');
   const awardButtons = document.getElementById('award-buttons');
   const btnNoOne = document.getElementById('btn-no-one');
+  const modalCard = modal.querySelector('.modal-card');
+
+  const qTimer = document.getElementById('q-timer');
+  const timerDisplay = document.getElementById('timer-display');
+  const timerFill = document.getElementById('timer-fill');
+  const timesUpEl = document.getElementById('times-up');
+  const btnTimerStart = document.getElementById('btn-timer-start');
+  const btnTimerReset = document.getElementById('btn-timer-reset');
+  const btnTimerMinus = document.getElementById('btn-timer-minus');
+  const btnTimerPlus = document.getElementById('btn-timer-plus');
+  const defaultTimerLabel = document.getElementById('default-timer-label');
+  const btnDefaultMinus = document.getElementById('btn-default-minus');
+  const btnDefaultPlus = document.getElementById('btn-default-plus');
+  const btnSound = document.getElementById('btn-sound');
 
   const finalRankings = document.getElementById('final-rankings');
   const confettiField = document.getElementById('confetti-field');
@@ -179,6 +193,7 @@
     awardSection.classList.add('hidden');
 
     renderAwardButtons();
+    timerSetup(timerPrefs.defaultSeconds);
     modal.classList.add('active');
   }
 
@@ -195,6 +210,7 @@
   }
 
   btnReveal.addEventListener('click', () => {
+    if (timer.running) timerPause();
     modalAnswer.classList.add('visible');
     btnReveal.style.display = 'none';
     awardSection.classList.remove('hidden');
@@ -215,6 +231,7 @@
       usedClues.add(`${activeClue.catIdx}-${activeClue.clueIdx}`);
     }
     activeClue = null;
+    timerStop();
     modal.classList.remove('active');
     renderBoard();
     renderScoreboard();
@@ -229,6 +246,172 @@
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeClue();
   });
+
+  // ---------- Question timer ----------
+  // The board header sets the DEFAULT length (remembered on this device);
+  // each question card starts at that default and can be nudged ±5s for
+  // just that question. The host starts it manually; revealing the answer
+  // pauses it; closing the card stops it.
+  const TIMER_MIN = 5, TIMER_MAX = 300, TIMER_STEP = 5;
+  const PREFS_KEY = 'jeopardyTimerPrefs_v1';
+  const timerPrefs = loadTimerPrefs();
+  const timer = { duration: 30, remainingMs: 30000, endAt: 0, running: false, done: false, interval: null };
+  let audioCtx = null;
+
+  function loadTimerPrefs() {
+    const prefs = { defaultSeconds: 30, sound: true };
+    try {
+      const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}');
+      if (Number.isFinite(saved.defaultSeconds)) prefs.defaultSeconds = clampSeconds(saved.defaultSeconds);
+      if (typeof saved.sound === 'boolean') prefs.sound = saved.sound;
+    } catch (e) { /* storage blocked — defaults are fine */ }
+    return prefs;
+  }
+  function saveTimerPrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(timerPrefs)); } catch (e) { /* ignore */ }
+  }
+  function clampSeconds(n) { return Math.min(TIMER_MAX, Math.max(TIMER_MIN, Math.round(n))); }
+
+  function renderTimerSetting() {
+    defaultTimerLabel.textContent = formatSeconds(timerPrefs.defaultSeconds);
+    btnDefaultMinus.disabled = timerPrefs.defaultSeconds <= TIMER_MIN;
+    btnDefaultPlus.disabled = timerPrefs.defaultSeconds >= TIMER_MAX;
+    btnSound.textContent = timerPrefs.sound ? '🔔' : '🔕';
+    btnSound.setAttribute('aria-label', timerPrefs.sound ? 'Mute time\'s-up sound' : 'Unmute time\'s-up sound');
+  }
+  function formatSeconds(n) { return n < 60 ? `${n}s` : `${Math.floor(n / 60)}m${n % 60 ? ` ${n % 60}s` : ''}`; }
+
+  btnDefaultMinus.addEventListener('click', () => changeDefault(-TIMER_STEP));
+  btnDefaultPlus.addEventListener('click', () => changeDefault(TIMER_STEP));
+  function changeDefault(delta) {
+    timerPrefs.defaultSeconds = clampSeconds(timerPrefs.defaultSeconds + delta);
+    saveTimerPrefs();
+    renderTimerSetting();
+  }
+  btnSound.addEventListener('click', () => {
+    timerPrefs.sound = !timerPrefs.sound;
+    saveTimerPrefs();
+    renderTimerSetting();
+  });
+  renderTimerSetting();
+
+  function timerSetup(seconds) {
+    timerStop();
+    timer.duration = clampSeconds(seconds);
+    timer.remainingMs = timer.duration * 1000;
+    timer.done = false;
+    modalCard.classList.remove('times-up-flash');
+    renderTimer();
+  }
+
+  function timerStart() {
+    if (timer.done || timer.remainingMs <= 0) timerSetup(timer.duration);
+    unlockAudio();
+    timer.endAt = performance.now() + timer.remainingMs;
+    timer.running = true;
+    timer.interval = setInterval(timerTick, 100);
+    renderTimer();
+  }
+
+  function timerPause() {
+    if (!timer.running) return;
+    timer.remainingMs = Math.max(0, timer.endAt - performance.now());
+    timer.running = false;
+    clearInterval(timer.interval);
+    renderTimer();
+  }
+
+  function timerStop() {
+    timer.running = false;
+    clearInterval(timer.interval);
+  }
+
+  function timerTick() {
+    timer.remainingMs = Math.max(0, timer.endAt - performance.now());
+    if (timer.remainingMs <= 0) return timerFinish();
+    renderTimer();
+  }
+
+  function timerFinish() {
+    timerStop();
+    timer.remainingMs = 0;
+    timer.done = true;
+    renderTimer();
+    // Restart the flash animation even if it ran on a previous question.
+    modalCard.classList.remove('times-up-flash');
+    void modalCard.offsetWidth;
+    modalCard.classList.add('times-up-flash');
+    if (timerPrefs.sound) playChime();
+  }
+
+  // ±5s on THIS question only. While running it adds/removes time live.
+  function timerAdjust(delta) {
+    const newDuration = clampSeconds(timer.duration + delta);
+    const applied = newDuration - timer.duration;
+    if (!applied && !timer.done) return;
+    timer.duration = newDuration;
+    if (timer.done) return timerSetup(newDuration);
+    if (timer.running) {
+      timer.endAt = Math.max(performance.now() + 1000, timer.endAt + applied * 1000);
+      timer.remainingMs = timer.endAt - performance.now();
+    } else {
+      timer.remainingMs = Math.max(1000, Math.min(timer.duration * 1000, timer.remainingMs + applied * 1000));
+    }
+    renderTimer();
+  }
+
+  function renderTimer() {
+    const secs = Math.ceil(timer.remainingMs / 1000);
+    timerDisplay.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+    const fraction = timer.duration ? timer.remainingMs / (timer.duration * 1000) : 0;
+    timerFill.style.width = `${Math.max(0, Math.min(1, fraction)) * 100}%`;
+
+    const started = timer.remainingMs < timer.duration * 1000;
+    qTimer.classList.toggle('warning', !timer.done && started && timer.remainingMs <= 5000);
+    qTimer.classList.toggle('paused', !timer.running && started && !timer.done);
+    qTimer.classList.toggle('done', timer.done);
+    timesUpEl.textContent = timer.done ? '⏰ TIME\'S UP!' : '';
+
+    btnTimerStart.textContent = timer.running ? '⏸ Pause'
+      : timer.done ? '▶ Restart'
+      : started ? '▶ Resume'
+      : '▶ Start timer';
+    btnTimerMinus.disabled = timer.duration <= TIMER_MIN;
+    btnTimerPlus.disabled = timer.duration >= TIMER_MAX;
+  }
+
+  btnTimerStart.addEventListener('click', () => (timer.running ? timerPause() : timerStart()));
+  btnTimerReset.addEventListener('click', () => timerSetup(timer.duration));
+  btnTimerMinus.addEventListener('click', () => timerAdjust(-TIMER_STEP));
+  btnTimerPlus.addEventListener('click', () => timerAdjust(TIMER_STEP));
+
+  // Browsers only allow sound after a click, so the audio context is
+  // created when the host presses Start.
+  function unlockAudio() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+  }
+
+  // Three quick rising "ding"s.
+  function playChime() {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime;
+    [660, 880, 1100].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const t = now + i * 0.18;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    });
+  }
 
   // ---------- End game ----------
   btnEndGame.addEventListener('click', () => {

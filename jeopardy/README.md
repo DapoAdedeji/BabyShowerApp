@@ -34,7 +34,15 @@ hub's menu screen.
    `../leaderboard/`). Jeopardy reads that same roster — no separate setup here.
 1. **Start screen** — shows the registered teams, hit **Start the Game**.
 2. **Board** — click any tile to open that clue.
-3. In the clue popup, read the clue aloud, then hit **Reveal Answer**.
+3. In the clue popup, read the clue aloud. Hit **▶ Start timer** if you want
+   a countdown, then **Reveal Answer** (which pauses the timer).
+
+   **Timer:** the **⏱** control in the board's header sets the default length
+   for every question (5s–5m, remembered on this device), and 🔔/🔕 turns
+   the time's-up chime on or off. Inside a question, **−5 / +5** changes the
+   time for that question only, even while it's running. **↺** resets it. In
+   the last 5 seconds the countdown turns red and pulses, and at zero you get
+   a big **⏰ TIME'S UP!** with a flashing card and a chime.
 4. Tap whichever team shouted the correct answer first to award them the
    points — or **No one got it** if nobody gets it. The tile is marked off
    either way. Points are saved straight to the shared Leaderboard.
