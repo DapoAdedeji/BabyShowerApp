@@ -32,10 +32,16 @@ Secrets; for branch previews, use `npx wrangler preview base-config secret put
 <NAME>`). Sign-in lasts 30 days per device. Changing either password signs
 everyone out.
 
-**Scores for guests:** the host's device stays the source of truth
-(`session.js`), and every score change is also copied to the server so
-guests' phones can show the live leaderboard. If two admin devices change
-scores, the most recent change wins.
+**Teams & scores live on the server.** There is one copy, in Cloudflare
+KV. Every admin page (Leaderboard, Jeopardy, Edit Scores, Guess That Baby
+host) and every guest phone reads that same copy, so names and scores
+always match everywhere. Admin pages send each change as a small action
+("add 300 to team t2"), so two admin devices never overwrite each other.
+Every page also re-checks every few seconds, so a change on one device
+shows up on the others. Each team has a permanent id (`t1`, `t2`, …), and
+games refer to teams by id. Renaming a team therefore keeps its Guess That
+Baby phone and answers. See `session.js` and `/api/leaderboard` in
+`worker/index.js`.
 
 Locally, `npx serve .` has no Worker, so there's no sign-in and no API. Use
 `npx wrangler dev` with a `.dev.vars` file (gitignored) containing
@@ -77,8 +83,8 @@ and guests can't open it.
   ✅/❌. It ends on the final results. Keys: → / Space for next, ← for back,
   Esc to exit.
 - **🏆 Add points to Leaderboard:** **300 points per correct answer**
-  (`GTB_POINTS` in the Worker). It can only be done once per round, and has
-  to run on the device that runs the Leaderboard.
+  (`GTB_POINTS` in the Worker), added on the server. It works from any
+  admin device and can only be done once per round.
 - **↺ Restart game:** releases every phone, clears all answers and starts
   a fresh round. Points already added stay on the Leaderboard.
 
@@ -140,10 +146,11 @@ that same roster:
      since it's meant for between games, not mid-round.
    - **🗑️ Reset Everything** — deletes teams and scores; back to setup.
 
-Future activities (Karaoke, etc.) should follow the same pattern: check
-`ShowerSession.hasTeams()` before anything else, read `ShowerSession.getTeams()`
-for the roster, and call `ShowerSession.updateScore(index, delta)` to award
-points. To give a game manual score editing, include `../score-editor.js` after
+Future activities (Karaoke, etc.) should follow the same pattern: `await
+ShowerSession.ready`, check `ShowerSession.hasTeams()`, read
+`ShowerSession.getTeams()` for the roster, call
+`ShowerSession.addPoints(team.id, delta)` to award points, and use
+`ShowerSession.onChange(fn)` to stay in step with other devices. To give a game manual score editing, include `../score-editor.js` after
 `session.js` and call `ScoreEditor.open({ onSave })`. See `session.js` for the
 full API.
 

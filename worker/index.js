@@ -15,7 +15,8 @@
 //   POST   /api/auth/logout     -> clears it
 //   GET    /api/auth/me         -> { role } or { role: null }
 //   GET    /api/leaderboard     -> teams + scores          (guest or admin)
-//   PUT    /api/leaderboard     -> admin app syncs scores   (admin)
+//   POST   /api/leaderboard     -> one change, e.g. { op:'add', id, delta } (admin)
+//                                  — THE source of truth for teams & scores
 //   GET    /api/questions       -> saved Jeopardy questions (admin)
 //   PUT    /api/questions       -> save questions           (admin)
 //   DELETE /api/questions       -> back to questions.js     (admin)
@@ -132,25 +133,22 @@ async function handleApi(request, env, url) {
     return json({ error: 'Storage (KV) is not connected to this Worker.' }, 503);
   }
 
-  // --- Leaderboard ---
+  // --- Leaderboard (the one source of truth for teams & scores) ---
   if (pathname === '/api/leaderboard' && method === 'GET') {
     const session = await readSession(request, env);
     if (!session && !(await hasAdminBearer(request, env))) return json({ error: 'Please sign in.' }, 401);
-    const saved = await env.QUESTIONS.get(LEADERBOARD_KEY);
-    return new Response(saved || JSON.stringify({ teams: [], updatedAt: null }), {
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-    });
+    return json(await lbLoad(env));
   }
-  if (pathname === '/api/leaderboard' && method === 'PUT') {
+  if (pathname === '/api/leaderboard' && method === 'POST') {
     const authError = await requireAdmin(request, env);
     if (authError) return authError;
     let body;
     try { body = await request.json(); } catch (e) { return json({ error: 'That wasn\'t valid JSON.' }, 400); }
-    const result = validateLeaderboard(body);
-    if (result.error) return json({ error: result.error }, 400);
-    const toSave = { teams: result.teams, updatedAt: new Date().toISOString() };
-    await env.QUESTIONS.put(LEADERBOARD_KEY, JSON.stringify(toSave));
-    return json({ ok: true, updatedAt: toSave.updatedAt });
+    const lb = await lbLoad(env);
+    const result = lbApply(lb, body);
+    if (result.error) return json({ error: result.error, leaderboard: lb }, result.status || 400);
+    const err = await lbSave(env, lb);
+    return err || json(lb);
   }
 
   // --- Jeopardy questions (admin only) ---
@@ -203,22 +201,22 @@ async function handleApi(request, env, url) {
 //                                  the answers and never goes to guests
 //                                  until the host reveals)
 //   gtb:state                      { round, status: open|closed|revealed }
-//   gtb:claim:<round>:<team>       { token }  which phone owns the team
-//   gtb:sheet:<round>:<team>       { answers:{ "1": "Name", ... } }
+//   gtb:claim:<round>:<teamId>     { token }  which phone owns the team
+//   gtb:sheet:<round>:<teamId>     { answers:{ "1": "Name", ... } }
+// Teams are referenced by their permanent Leaderboard id, never by name.
 // "Restart" starts a new round id, so old claims and sheets are ignored.
 //
 // Guest (or admin) endpoints — the phone identifies itself with the
-// headers X-GTB-Team + X-GTB-Token it got when claiming:
+// headers X-GTB-Team (team id) + X-GTB-Token it got when claiming:
 //   GET  /api/gtb/state            everything the phone needs to draw the game
-//   POST /api/gtb/claim  {team}    claim a team -> { token }
+//   POST /api/gtb/claim  {team}    claim a team by id -> { token }
 //   PUT  /api/gtb/answers {answers} save this team's sheet (only while open)
 // Admin endpoints:
 //   GET  /api/gtb/admin            full picture: claims, sheets, answer key
 //   POST /api/gtb/close | /open | /reveal | /reset
-//   POST /api/gtb/release {team}   free a team so another phone can claim it
-//   POST /api/gtb/award            mark this round's points as awarded (once);
-//                                  the host page then adds them to the
-//                                  Leaderboard (GTB_POINTS per correct answer)
+//   POST /api/gtb/release {team}   free a team (by id) so another phone can claim it
+//   POST /api/gtb/award            add this round's points to the Leaderboard
+//                                  (GTB_POINTS per correct answer) — once per round
 //   PUT  /api/gtb/config           replace photos / names / answer key
 
 const GTB_POINTS = 300; // per correct answer
@@ -252,11 +250,10 @@ async function gtbState(env) {
   return saved || { round: 'r1', status: 'open' };
 }
 async function gtbTeams(env) {
-  const lb = await env.QUESTIONS.get(LEADERBOARD_KEY, 'json');
-  return lb && Array.isArray(lb.teams) ? lb.teams : [];
+  return (await lbLoad(env)).teams;
 }
-const gtbClaimKey = (round, team) => `gtb:claim:${round}:${encodeURIComponent(team)}`;
-const gtbSheetKey = (round, team) => `gtb:sheet:${round}:${encodeURIComponent(team)}`;
+const gtbClaimKey = (round, teamId) => `gtb:claim:${round}:${encodeURIComponent(teamId)}`;
+const gtbSheetKey = (round, teamId) => `gtb:sheet:${round}:${encodeURIComponent(teamId)}`;
 
 // KV allows about one write per second to the same record; turn its
 // rate-limit error into a friendly 429 the phone retries.
@@ -275,7 +272,7 @@ function gtbScore(answers, key) {
   return correct;
 }
 
-// Does this phone own a team? Returns the team name or null.
+// Does this phone own a team? Returns the team id or null.
 async function gtbMyTeam(request, env, state) {
   const team = decodeURIComponent(request.headers.get('X-GTB-Team') || '');
   const token = request.headers.get('X-GTB-Token') || '';
@@ -294,7 +291,7 @@ async function handleGtb(request, env, url) {
   // ---------- Phone (guest) endpoints ----------
   if (route === 'state' && method === 'GET') {
     const [config, state, teams] = await Promise.all([gtbConfig(env), gtbState(env), gtbTeams(env)]);
-    const claims = await Promise.all(teams.map(t => env.QUESTIONS.get(gtbClaimKey(state.round, t.name), 'json')));
+    const claims = await Promise.all(teams.map(t => env.QUESTIONS.get(gtbClaimKey(state.round, t.id), 'json')));
     const myTeam = await gtbMyTeam(request, env, state);
     const sheet = myTeam ? (await env.QUESTIONS.get(gtbSheetKey(state.round, myTeam), 'json')) : null;
     const answers = (sheet && sheet.answers) || {};
@@ -302,7 +299,7 @@ async function handleGtb(request, env, url) {
     return json({
       status: state.status,
       round: state.round,
-      teams: teams.map((t, i) => ({ name: t.name, color: t.color, claimed: !!claims[i] })),
+      teams: teams.map((t, i) => ({ id: t.id, name: t.name, color: t.color, claimed: !!claims[i] })),
       photos: config.photos,
       names: [...config.names].sort((a, b) => a.localeCompare(b)),
       myTeam,
@@ -320,7 +317,7 @@ async function handleGtb(request, env, url) {
     const team = typeof body.team === 'string' ? body.team : '';
     const [state, teams] = await Promise.all([gtbState(env), gtbTeams(env)]);
     if (!teams.length) return json({ error: 'The Leaderboard isn\'t set up yet — ask the host to add the teams.' }, 409);
-    if (!teams.some(t => t.name === team)) return json({ error: 'That team isn\'t on the Leaderboard.' }, 400);
+    if (!teams.some(t => t.id === team)) return json({ error: 'That team isn\'t on the Leaderboard any more.' }, 400);
     if (state.status !== 'open') return json({ error: 'This round is closed.' }, 409);
 
     const claimKey = gtbClaimKey(state.round, team);
@@ -366,11 +363,12 @@ async function handleGtb(request, env, url) {
     const [config, state, teams] = await Promise.all([gtbConfig(env), gtbState(env), gtbTeams(env)]);
     const rows = await Promise.all(teams.map(async t => {
       const [claim, sheet] = await Promise.all([
-        env.QUESTIONS.get(gtbClaimKey(state.round, t.name), 'json'),
-        env.QUESTIONS.get(gtbSheetKey(state.round, t.name), 'json')
+        env.QUESTIONS.get(gtbClaimKey(state.round, t.id), 'json'),
+        env.QUESTIONS.get(gtbSheetKey(state.round, t.id), 'json')
       ]);
       const answers = (sheet && sheet.answers) || {};
       return {
+        id: t.id,
         name: t.name,
         color: t.color,
         claimed: !!claim,
@@ -394,15 +392,22 @@ async function handleGtb(request, env, url) {
     const state = await gtbState(env);
     if (state.status !== 'revealed') return json({ error: 'Reveal the answers before awarding points.' }, 409);
     if (state.awarded) return json({ error: 'Points for this round were already awarded.' }, 409);
-    const err = await kvPut(env, 'gtb:state', { ...state, awarded: true, updatedAt: new Date().toISOString() });
-    if (err) return err;
-    const [config, teams] = await Promise.all([gtbConfig(env), gtbTeams(env)]);
-    const results = await Promise.all(teams.map(async t => {
-      const sheet = await env.QUESTIONS.get(gtbSheetKey(state.round, t.name), 'json');
+    // Mark first, so a retry can never add the points twice.
+    const markErr = await kvPut(env, 'gtb:state', { ...state, awarded: true, updatedAt: new Date().toISOString() });
+    if (markErr) return markErr;
+    const [config, lb] = await Promise.all([gtbConfig(env), lbLoad(env)]);
+    const results = await Promise.all(lb.teams.map(async t => {
+      const sheet = await env.QUESTIONS.get(gtbSheetKey(state.round, t.id), 'json');
       const correct = gtbScore((sheet && sheet.answers) || {}, config.key);
-      return { name: t.name, correct, points: correct * GTB_POINTS };
+      return { id: t.id, name: t.name, correct, points: correct * GTB_POINTS };
     }));
-    return json({ ok: true, results });
+    results.forEach(r => { lbApply(lb, { op: 'add', id: r.id, delta: r.points }); });
+    const err = await lbSave(env, lb);
+    if (err) {
+      await kvPut(env, 'gtb:state', { ...state, awarded: false });
+      return err;
+    }
+    return json({ ok: true, results, leaderboard: lb });
   }
 
   const STATUS_FOR = { close: 'closed', open: 'open', reveal: 'revealed' };
@@ -575,19 +580,111 @@ async function safeEqual(a, b) {
 }
 
 // ---------- Validation ----------
-function validateLeaderboard(body) {
-  if (!body || !Array.isArray(body.teams)) return { error: 'Missing teams.' };
-  if (body.teams.length > LIMITS.teams) return { error: `Too many teams (max ${LIMITS.teams}).` };
-  const teams = [];
-  for (const t of body.teams) {
-    const name = cleanText(t && t.name, LIMITS.teamName);
-    const score = Number(t && t.score);
-    const color = typeof (t && t.color) === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(t.color) ? t.color : '#8fd9f7';
-    if (!name) return { error: 'Every team needs a name.' };
-    if (!Number.isFinite(score) || Math.abs(score) > 10000000) return { error: `Bad score for ${name}.` };
-    teams.push({ name, score: Math.round(score), color });
+// ---------- Leaderboard model ----------
+// KV "leaderboard" = { version, updatedAt, teams: [{ id, name, score, color }] }
+// Every team has a permanent id ("t1", "t2", …). Games refer to teams by
+// id, so renaming a team never breaks Guess That Baby claims or answers.
+// Admin pages send small operations instead of whole copies, so two
+// devices can't overwrite each other's changes.
+const TEAM_COLORS = ['#ff9ecf', '#8fd9f7', '#8fe0b3', '#ffe066', '#c9aef5', '#ffb085'];
+
+async function lbLoad(env) {
+  const saved = await env.QUESTIONS.get(LEADERBOARD_KEY, 'json');
+  const lb = { version: 0, updatedAt: null, teams: [] };
+  if (saved && Array.isArray(saved.teams)) {
+    lb.version = Number(saved.version) || 0;
+    lb.updatedAt = saved.updatedAt || null;
+    const used = new Set();
+    saved.teams.forEach((t, i) => {
+      // Older saves had no ids — give them stable ones.
+      let id = typeof t.id === 'string' && t.id ? t.id : `t${i + 1}`;
+      while (used.has(id)) id = `${id}x`;
+      used.add(id);
+      lb.teams.push({
+        id,
+        name: cleanText(t.name, LIMITS.teamName) || `Team ${i + 1}`,
+        score: Number.isFinite(Number(t.score)) ? Math.round(Number(t.score)) : 0,
+        color: typeof t.color === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(t.color) ? t.color : TEAM_COLORS[i % TEAM_COLORS.length]
+      });
+    });
   }
-  return { teams };
+  return lb;
+}
+
+async function lbSave(env, lb) {
+  lb.version += 1;
+  lb.updatedAt = new Date().toISOString();
+  return kvPut(env, LEADERBOARD_KEY, lb);
+}
+
+function nextTeamId(teams) {
+  const nums = teams.map(t => Number(String(t.id).replace(/^t/, ''))).filter(Number.isFinite);
+  return `t${(nums.length ? Math.max(...nums) : 0) + 1}`;
+}
+
+const MAX_SCORE = 10000000;
+const okScore = n => Number.isFinite(n) && Math.abs(n) <= MAX_SCORE;
+
+// Applies one change to `lb` in place. Returns {} or { error, status }.
+function lbApply(lb, body) {
+  const op = body && body.op;
+  const find = id => lb.teams.find(t => t.id === id);
+
+  if (op === 'create') {
+    // New lineup, all scores 0. Teams keep their id by position, so
+    // fixing a typo in a name keeps that team's game progress.
+    const names = Array.isArray(body.names) ? body.names.map(n => cleanText(n, LIMITS.teamName)) : [];
+    if (names.length < 1 || names.length > LIMITS.teams) return { error: `Between 1 and ${LIMITS.teams} teams.` };
+    const old = lb.teams;
+    const teams = [];
+    names.forEach((name, i) => {
+      teams.push({
+        id: old[i] ? old[i].id : nextTeamId(old.concat(teams)),
+        name: name || `Team ${i + 1}`,
+        score: 0,
+        color: TEAM_COLORS[i % TEAM_COLORS.length]
+      });
+    });
+    lb.teams = teams;
+    return {};
+  }
+  if (op === 'import') {
+    // One-time copy of teams a browser had saved before the server was in charge.
+    if (lb.teams.length) return { error: 'The server already has teams.', status: 409 };
+    const teams = Array.isArray(body.teams) ? body.teams.slice(0, LIMITS.teams) : [];
+    if (!teams.length) return { error: 'Nothing to import.' };
+    teams.forEach((t, i) => {
+      lb.teams.push({
+        id: `t${i + 1}`,
+        name: cleanText(t && t.name, LIMITS.teamName) || `Team ${i + 1}`,
+        score: okScore(Number(t && t.score)) ? Math.round(Number(t.score)) : 0,
+        color: TEAM_COLORS[i % TEAM_COLORS.length]
+      });
+    });
+    return {};
+  }
+  if (op === 'add') {
+    const team = find(body.id);
+    const delta = Number(body.delta);
+    if (!team) return { error: 'That team no longer exists.', status: 409 };
+    if (!okScore(delta) || !okScore(team.score + delta)) return { error: 'That score is out of range.' };
+    team.score = Math.round(team.score + delta);
+    return {};
+  }
+  if (op === 'set') {
+    const scores = body.scores && typeof body.scores === 'object' ? body.scores : {};
+    for (const [id, value] of Object.entries(scores)) {
+      const team = find(id);
+      const n = Number(value);
+      if (!team) continue; // removed meanwhile — skip
+      if (!okScore(n)) return { error: `Bad score for ${team.name}.` };
+      team.score = Math.round(n);
+    }
+    return {};
+  }
+  if (op === 'resetScores') { lb.teams.forEach(t => { t.score = 0; }); return {}; }
+  if (op === 'clear') { lb.teams = []; return {}; }
+  return { error: 'Unknown change.' };
 }
 
 // Checks shape + limits and returns a cleaned copy (only known fields kept).

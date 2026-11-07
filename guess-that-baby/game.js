@@ -8,7 +8,7 @@
 // Server API: /api/gtb/* in ../worker/index.js.
 // ============================================================
 (function () {
-  const CLAIM_KEY = 'gtbClaim_v1';   // { round, team, token } on this phone
+  const CLAIM_KEY = 'gtbClaim_v2';   // { round, team: <team id>, token } on this phone
   const POLL_MS = 8000;
   const SAVE_DELAY_MS = 700;
 
@@ -141,7 +141,7 @@
         go.className = 'gtb-go';
         go.textContent = '→';
         btn.append(dot, name, go);
-        btn.addEventListener('click', () => claimTeam(team.name));
+        btn.addEventListener('click', () => claimTeam(team));
         list.appendChild(btn);
       });
     }
@@ -149,11 +149,12 @@
   }
 
   async function claimTeam(team) {
-    if (!confirm(`Join as "${team}"? This phone will be locked to that team.`)) return;
+    if (!confirm(`Join as "${team.name}"? This phone will be locked to that team.`)) return;
     $('team-error').textContent = '';
     $('team-list').querySelectorAll('button').forEach(b => { b.disabled = true; });
     try {
-      const res = await api('POST', '/api/gtb/claim', { team });
+      // Teams are claimed by their permanent Leaderboard id, not their name.
+      const res = await api('POST', '/api/gtb/claim', { team: team.id });
       if (!res.ok) throw new Error(res.data.error || 'Couldn\'t join that team.');
       storeClaim({ round: state.round, team: res.data.team, token: res.data.token });
       lastNotice = '';
@@ -166,8 +167,8 @@
 
   // ---------- Game ----------
   function renderGame(scrollTracker) {
-    const myTeam = state.teams.find(t => t.name === state.myTeam) || {};
-    $('my-team-name').textContent = state.myTeam;
+    const myTeam = state.teams.find(t => t.id === state.myTeam) || {};
+    $('my-team-name').textContent = myTeam.name || '';
     $('my-team-dot').style.background = myTeam.color || '';
     const total = state.photos.length;
     const done = Object.keys(answers).length;

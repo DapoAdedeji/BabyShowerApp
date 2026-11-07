@@ -1,7 +1,7 @@
 // ============================================================
 // LEADERBOARD — team setup (first run) + running league table
-// Reads/writes the shared ShowerSession (see ../session.js) so
-// every other activity (Jeopardy, Karaoke, ...) sees the same roster.
+// Reads/writes the shared ShowerSession (see ../session.js) — the
+// server copy every other page and every guest phone also uses.
 // ============================================================
 
 (function () {
@@ -67,6 +67,7 @@
 
   btnStartSession.addEventListener('click', () => {
     ShowerSession.save(teamNamesState);
+    editingTeams = false;
     renderTable();
     showScreen(screenTable);
   });
@@ -96,6 +97,7 @@
     // Pre-fill setup with the current roster so edits are easy, not a blank slate.
     const current = ShowerSession.getTeams();
     teamNamesState = current.length ? current.map(t => t.name) : teamNamesState;
+    editingTeams = true;
     renderTeamInputs();
     showScreen(screenSetup);
   });
@@ -122,13 +124,25 @@
   });
 
   // ---------- Init ----------
-  if (ShowerSession.hasTeams()) {
-    renderTable();
-    showScreen(screenTable);
-  } else {
-    renderTeamInputs();
-    showScreen(screenSetup);
+  // Teams live on the server (see ../session.js). Show the last known copy
+  // straight away, then follow the server — including changes made on
+  // other devices — without interrupting someone editing the lineup.
+  let editingTeams = false;
+
+  function showCurrent() {
+    if (editingTeams) return;
+    if (ShowerSession.hasTeams()) {
+      renderTable();
+      showScreen(screenTable);
+    } else {
+      renderTeamInputs();
+      showScreen(screenSetup);
+    }
   }
+
+  showCurrent();
+  ShowerSession.ready.then(showCurrent);
+  ShowerSession.onChange(showCurrent);
 
   // ---------- Utils ----------
   function escapeHtml(str) {

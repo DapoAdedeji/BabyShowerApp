@@ -168,7 +168,7 @@
       release.hidden = !team.claimed;
       release.addEventListener('click', () => {
         if (confirm(`Release ${team.name}'s phone? Their answers are kept, and the next phone to pick ${team.name} carries on.`)) {
-          action(() => api('POST', '/api/gtb/release', { team: team.name }));
+          action(() => api('POST', '/api/gtb/release', { team: team.id }));
         }
       });
 
@@ -193,27 +193,14 @@
   });
 
   // ---------- Points ----------
+  // The server adds the points straight to the shared Leaderboard (by team
+  // id), so this works from any admin device and can't run twice.
   async function awardPoints() {
-    // Scores live on the device running the Leaderboard (this one, normally).
-    if (!window.ShowerSession || !ShowerSession.hasTeams()) {
-      showError('This device isn\'t running the Leaderboard. Add the points from the laptop that set up the teams.');
-      return;
-    }
-    const local = ShowerSession.getTeams().map(t => t.name);
     const lines = data.teams.map(t => `${t.name}: ${t.correct} right → +${(t.correct * data.pointsPerCorrect).toLocaleString()}`);
     if (!confirm(`Add these points to the Leaderboard?\n\n${lines.join('\n')}\n\nThis can only be done once per round.`)) return;
-
     await action(async () => {
-      const res = await api('POST', '/api/gtb/award');
-      const missing = [];
-      res.results.forEach(r => {
-        const idx = local.indexOf(r.name);
-        if (idx === -1) { missing.push(r.name); return; }
-        if (r.points) ShowerSession.updateScore(idx, r.points);
-      });
-      if (missing.length) {
-        throw new Error(`Couldn't find ${missing.join(', ')} on this device's Leaderboard — add their points with ✏️ Edit Scores.`);
-      }
+      await api('POST', '/api/gtb/award');
+      if (window.ShowerSession) ShowerSession.refresh();
     });
   }
 

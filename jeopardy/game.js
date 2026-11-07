@@ -74,12 +74,24 @@
   }
 
   // ---------- Gate: teams must be registered on the Leaderboard first ----------
+  // Teams come from the server (../session.js), the same copy guests see.
+  if (window.ShowerSession) await ShowerSession.ready;
   if (!window.ShowerSession || !ShowerSession.hasTeams()) {
     showScreen(screenGate);
     return; // nothing else in this file matters until teams exist
   }
 
-  teams = ShowerSession.getTeams().map(t => ({ ...t }));
+  teams = ShowerSession.getTeams();
+
+  // Scores or names changed (here, in Edit Scores, or on another device)?
+  // Keep the roster, scoreboard and award buttons in step.
+  ShowerSession.onChange((latest) => {
+    if (!latest.length) return;
+    teams = latest;
+    renderRoster();
+    if (screenBoard.classList.contains('active')) renderScoreboard();
+    if (activeClue) renderAwardButtons();
+  });
 
   function renderRoster() {
     teamRosterEl.innerHTML = '';
@@ -171,7 +183,7 @@
     ScoreEditor.open({
       step: 100,
       onSave: (updated) => {
-        teams = updated.map(t => ({ ...t }));
+        teams = updated;
         renderScoreboard();
       }
     });
@@ -218,9 +230,8 @@
 
   function awardPoints(teamIdx) {
     if (!activeClue) return;
-    teams[teamIdx].score += activeClue.value;
-    // Persist to the shared leaderboard so it reflects across the whole event.
-    ShowerSession.updateScore(teamIdx, activeClue.value);
+    // Goes to the shared leaderboard (by team id); onChange above updates `teams`.
+    ShowerSession.addPoints(teams[teamIdx].id, activeClue.value);
     closeClue();
   }
 
