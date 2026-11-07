@@ -88,9 +88,31 @@ and guests can't open it.
 - **↺ Restart game:** releases every phone, clears all answers and starts
   a fresh round. Points already added stay on the Leaderboard.
 
-Until real photos and names are uploaded, it uses a **demo set**: 30
-placeholder images (`guess-that-baby/demo/`) and 30 made-up names, defined
-in `worker/index.js`.
+**Photos & answers** come from a folder of photos, each **named after the
+person** (`Temi Coker.JPG` means the answer is "Temi Coker"). Load them with:
+
+```bash
+python3 scripts/seed_baby_photos.py "/path/to/Baby Photos"            # preview: processes + lists, uploads nothing
+python3 scripts/seed_baby_photos.py "/path/to/Baby Photos" --upload   # upload for real
+```
+
+For each photo the script:
+- turns it upright
+- converts it to JPEG (HEIC and PNG work too)
+- shrinks it to 1200px (it never enlarges)
+- strips hidden metadata such as GPS location
+- gives it a random ID, so photo URLs never contain names
+
+It shuffles the numbering, uploads everything to KV in one go, removes the
+previous upload's photos, and starts a fresh round. Teams and scores are
+untouched. **Re-run it whenever new photos arrive, but before the game
+starts**, because the numbering changes each time. It needs macOS and
+`npx wrangler login`. Photos are served only to signed-in visitors
+(`/api/gtb/photo/<id>`) and are never committed to git.
+
+With nothing uploaded, the game falls back to a **demo set** (30
+placeholder images in `guess-that-baby/demo/` and made-up names in
+`worker/index.js`).
 
 ## How it's structured
 

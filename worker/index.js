@@ -211,6 +211,7 @@ async function handleApi(request, env, url) {
 //   GET  /api/gtb/state            everything the phone needs to draw the game
 //   POST /api/gtb/claim  {team}    claim a team by id -> { token }
 //   PUT  /api/gtb/answers {answers} save this team's sheet (only while open)
+//   GET  /api/gtb/photo/<id>       a baby photo (JPEG) — see scripts/seed_baby_photos.py
 // Admin endpoints:
 //   GET  /api/gtb/admin            full picture: claims, sheets, answer key
 //   POST /api/gtb/close | /open | /reveal | /reset
@@ -287,6 +288,22 @@ async function handleGtb(request, env, url) {
   const session = await readSession(request, env);
   const isAdmin = (session && session.role === 'admin') || (await hasAdminBearer(request, env));
   if (!session && !isAdmin) return json({ error: 'Please sign in.' }, 401);
+
+  // ---------- Photos (any signed-in visitor) ----------
+  // Stored in KV as "gtb:photo:<random id>" — the id never contains the
+  // person's name, so URLs can't give the answers away.
+  const photoMatch = route.match(/^photo\/([a-f0-9]{8,32})$/);
+  if (photoMatch && method === 'GET') {
+    const bytes = await env.QUESTIONS.get(`gtb:photo:${photoMatch[1]}`, 'arrayBuffer');
+    if (!bytes) return new Response('Photo not found.', { status: 404 });
+    return new Response(bytes, {
+      headers: {
+        'Content-Type': 'image/jpeg',
+        // Each upload gets a new id, so a cached copy is never out of date.
+        'Cache-Control': 'private, max-age=86400, immutable'
+      }
+    });
+  }
 
   // ---------- Phone (guest) endpoints ----------
   if (route === 'state' && method === 'GET') {
