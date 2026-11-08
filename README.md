@@ -135,7 +135,7 @@ BabyShowerApp/
 ├── guest/                  # Guest home (2 cards) + view-only leaderboard (guest/leaderboard/)
 ├── guess-that-baby/        # 👶 Guess That Baby — the guest phone game (see below)
 ├── signout.js              # Shared "Sign out" button behaviour
-└── karaoke/                          # 🚧 placeholder — "Coming soon"
+└── timer/                  # ⏱️ Admin countdown timer for the hosts' other games
 ```
 
 Every activity is **self-contained in its own folder** with its own
@@ -171,7 +171,7 @@ that same roster:
      since it's meant for between games, not mid-round.
    - **🗑️ Reset Everything** — deletes teams and scores; back to setup.
 
-Future activities (Karaoke, etc.) should follow the same pattern: `await
+Future activities should follow the same pattern: `await
 ShowerSession.ready`, check `ShowerSession.hasTeams()`, read
 `ShowerSession.getTeams()` for the roster, call
 `ShowerSession.addPoints(team.id, delta)` to award points, and use
@@ -188,6 +188,3 @@ full API.
   variables in `jeopardy/style.css` (kept self-contained on purpose) — update
   both if you want a palette change to apply everywhere.
 - **Baby Jeopardy content** — see `jeopardy/README.md`, edit `jeopardy/questions.js`.
-- **Guess That Baby / Karaoke** — not built yet. Each is currently a
-  one-page "Coming soon" stub matching the app's theme, ready to be replaced
-  with the real thing.

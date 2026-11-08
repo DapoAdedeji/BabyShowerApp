@@ -1,0 +1,147 @@
+/* ============================================================
+   TIMER — a big, TV-friendly countdown for the hosts' games
+   ============================================================ */
+
+.timer-card {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  background: rgba(255, 253, 251, 0.92);
+  backdrop-filter: blur(6px);
+  border: 4px solid var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px var(--shadow);
+  padding: 28px 36px 26px;
+  text-align: center;
+}
+
+.timer-head { display: flex; align-items: center; justify-content: space-between; }
+.timer-head .back-link { margin: 0; }
+.timer-head-tools { display: flex; gap: 8px; }
+.tool-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--lavender);
+  background: var(--white);
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+.tool-btn:hover { background: var(--lavender); }
+
+.timer-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  color: var(--pink-deep);
+  text-shadow: 2px 2px 0 var(--butter);
+  margin: 6px 0 14px;
+}
+
+/* ---------- Setup ---------- */
+/* Sits above the countdown: the big digits' font reaches above their own
+   box, and without this it would swallow clicks on the −10s/+10s row. */
+.timer-setup { position: relative; z-index: 2; transition: opacity 0.2s ease; }
+.timer-setup.locked { opacity: 0.4; pointer-events: none; }
+
+.presets { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 14px; }
+.preset {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--white);
+  border: 2px solid var(--lavender);
+  border-radius: 999px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+.preset:hover { background: var(--lavender); }
+.preset.selected { background: var(--pink-deep); border-color: var(--pink-deep); color: var(--white); }
+
+.exact { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.nudge {
+  font-family: var(--font-display);
+  font-weight: 800;
+  min-width: 56px;
+  height: 40px;
+  border-radius: 999px;
+  border: 2px solid var(--lavender);
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+}
+.nudge:hover { background: var(--lavender); }
+.exact-field input {
+  width: 70px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.4rem;
+  text-align: center;
+  color: var(--ink);
+  border: 2px solid var(--lavender);
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  background: var(--white);
+}
+.exact-field input:focus { outline: none; border-color: var(--pink-deep); }
+.exact-colon { font-family: var(--font-display); font-weight: 800; font-size: 1.6rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Countdown ---------- */
+.countdown { margin: 18px 0 8px; }
+.digits {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(5rem, 20vw, 11rem);
+  line-height: 1.1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bar { height: 16px; margin-top: 14px; border-radius: 999px; background: var(--lavender); overflow: hidden; }
+.bar-fill { height: 100%; width: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--mint-deep), var(--blue-deep)); }
+
+.countdown.paused .digits { opacity: 0.55; }
+.countdown.warning .digits { color: #e5484d; animation: t-pulse 1s ease-in-out infinite; }
+.countdown.warning .bar-fill { background: linear-gradient(90deg, #ff7a7f, #e5484d); }
+@keyframes t-pulse { 50% { transform: scale(1.06); } }
+
+.times-up-text { display: none; }
+.countdown.done .digits { display: none; }
+.countdown.done .bar { visibility: hidden; }
+.countdown.done .times-up-text {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(3rem, 12vw, 7rem);
+  line-height: 1.05;
+  color: #e5484d;
+  text-shadow: 0 5px 0 #ffd0d2;
+  animation: t-pop 0.5s cubic-bezier(.2,1.6,.4,1) both, t-wiggle 0.6s ease-in-out 0.5s 3;
+}
+@keyframes t-pop { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes t-wiggle { 25% { transform: rotate(-4deg) scale(1.06); } 75% { transform: rotate(4deg) scale(1.06); } }
+
+.timer-card.flash { animation: t-flash 0.5s ease-in-out 4, t-shake 0.5s ease-in-out; }
+@keyframes t-flash {
+  50% { border-color: #e5484d; box-shadow: 0 0 0 12px rgba(229, 72, 77, 0.25), 0 20px 50px var(--shadow); }
+}
+@keyframes t-shake { 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+
+/* ---------- Controls ---------- */
+.controls { position: relative; z-index: 2; display: flex; justify-content: center; gap: 12px; margin-top: 18px; }
+.btn-go { min-width: 170px; }
+.hint { margin: 14px 0 0; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+
+/* Full screen: let the countdown fill the TV */
+.timer-page.is-fullscreen .timer-card { max-width: 1100px; }
+.timer-page.is-fullscreen .digits { font-size: clamp(8rem, 26vw, 18rem); }
+
+@media (max-width: 640px) {
+  .timer-card { padding: 22px 16px 20px; }
+  .nudge { min-width: 48px; }
+  .exact-field input { width: 58px; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .countdown.warning .digits, .countdown.done .times-up-text, .timer-card.flash { animation: none; }
+}

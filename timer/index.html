@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Timer — Dapo & Desola's Baby Shower</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏱️</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="timer.css" />
+</head>
+<body class="timer-page">
+  <div class="floaty-bg" aria-hidden="true">
+    <span>⏱️</span><span>🍼</span><span>⭐</span><span>🧸</span><span>⏰</span><span>🎈</span><span>⏱️</span><span>🍼</span>
+  </div>
+
+  <section class="screen active">
+    <div class="timer-card" id="timer-card">
+      <div class="timer-head">
+        <a href="/#menu" class="back-link">← Back to Menu</a>
+        <div class="timer-head-tools">
+          <button type="button" class="tool-btn" id="btn-sound" title="Time's-up sound on/off" aria-label="Mute time's-up sound">🔔</button>
+          <button type="button" class="tool-btn" id="btn-fullscreen" title="Full screen" aria-label="Full screen">⛶</button>
+        </div>
+      </div>
+
+      <h1 class="timer-title">⏱️ Timer</h1>
+
+      <!-- Setup: presets, nudges, exact time -->
+      <div class="timer-setup" id="timer-setup">
+        <div class="presets" id="presets" role="group" aria-label="Quick times"></div>
+        <div class="exact">
+          <button type="button" class="nudge" id="btn-minus" aria-label="10 seconds less">−10s</button>
+          <label class="exact-field">
+            <span class="sr-only">Minutes</span>
+            <input type="number" id="input-min" min="0" max="99" inputmode="numeric" />
+          </label>
+          <span class="exact-colon">:</span>
+          <label class="exact-field">
+            <span class="sr-only">Seconds</span>
+            <input type="number" id="input-sec" min="0" max="59" inputmode="numeric" />
+          </label>
+          <button type="button" class="nudge" id="btn-plus" aria-label="10 seconds more">+10s</button>
+        </div>
+      </div>
+
+      <!-- The countdown -->
+      <div class="countdown" id="countdown">
+        <div class="digits" id="digits" role="timer" aria-live="off">1:00</div>
+        <div class="times-up-text" id="times-up" role="alert" aria-live="assertive"></div>
+        <div class="bar" aria-hidden="true"><div class="bar-fill" id="bar-fill"></div></div>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="btn-primary btn-go" id="btn-start">▶ Start</button>
+        <button type="button" class="btn-ghost" id="btn-reset">↺ Reset</button>
+      </div>
+      <p class="hint">Space = start / pause · R = reset · F = full screen</p>
+    </div>
+  </section>
+
+  <script src="timer.js"></script>
+</body>
+</html>

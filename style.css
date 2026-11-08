@@ -1,7 +1,7 @@
 /* ============================================================
    BABY SHOWER EVENT APP — SHARED SHELL STYLES
    Used by the hub (this file) and by the "coming soon" feature
-   pages (welcome/guest/leaderboard/karaoke/...), which link to this file
+   pages (welcome/guest/leaderboard/timer/...), which link to this file
    via ../style.css. The jeopardy/ feature is self-contained with
    its own stylesheet — don't need to touch this file for that.
 
