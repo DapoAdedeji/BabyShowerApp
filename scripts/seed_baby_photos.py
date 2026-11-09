@@ -17,7 +17,7 @@ Photos are shuffled before numbering (alphabetical would give it away).
 
 --upload writes everything to the Cloudflare KV store in one go
 (`wrangler kv bulk put`), replaces the Guess That Baby photo list and
-answers, deletes the previous upload's photos, and starts a fresh round
+answers, deletes every stored photo the new set doesn't use, and starts a fresh round
 (old answers referred to the old numbering), clearing earlier rounds'
 phone claims and answer sheets. Teams and Leaderboard scores are not
 touched. Needs: macOS `sips`, `npx wrangler login`.
@@ -125,6 +125,29 @@ def wrangler(*args):
     return out.stdout
 
 
+def cleanup(ns, out_dir, keep_photos, round_id):
+    """Delete every stored photo the current set doesn't use, plus earlier
+    rounds' phone claims and answer sheets. Works from a full listing of the
+    store, so it also catches anything an earlier run left behind."""
+    listing = wrangler('kv', 'key', 'list', '--namespace-id', ns, '--remote', '--prefix', 'gtb:')
+    names = [k['name'] for k in json.loads(listing[listing.index('['):])]
+    photos = [k for k in names if k.startswith('gtb:photo:') and k not in keep_photos]
+    rounds = [k for k in names if k.startswith(('gtb:claim:', 'gtb:sheet:'))
+              and not k.startswith((f'gtb:claim:{round_id}:', f'gtb:sheet:{round_id}:'))]
+    stale_keys = photos + rounds
+    if not stale_keys:
+        return
+    stale = os.path.join(out_dir, 'stale.json')
+    with open(stale, 'w') as f:
+        json.dump(stale_keys, f)
+    wrangler('kv', 'bulk', 'delete', stale, '--namespace-id', ns, '--remote', '--force')
+    os.remove(stale)
+    if photos:
+        print(f'Removed {len(photos)} old photos.')
+    if rounds:
+        print(f'Cleared {len(rounds)} claims/answer sheets from earlier rounds.')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('folder', help='folder of photos named after each person')
@@ -175,17 +198,6 @@ def main():
         return
 
     ns = namespace_id()
-    # Remember the previous upload's photos so they can be removed afterwards.
-    old_keys = []
-    current = subprocess.run([*WRANGLER, 'kv', 'key', 'get', 'gtb:config', '--namespace-id', ns, '--remote'],
-                             capture_output=True, text=True, cwd=ROOT)
-    try:
-        old = json.loads(current.stdout[current.stdout.index('{'):])
-        old_keys = [f'gtb:photo:{p["img"].rsplit("/", 1)[1]}' for p in old.get('photos', [])
-                    if p.get('img', '').startswith('/api/gtb/photo/')]
-    except (ValueError, KeyError, IndexError):
-        pass
-
     config = {'photos': photos, 'names': sorted(names, key=str.lower), 'key': key}
     state = {'round': f'r{int(time.time() * 1000):x}', 'status': 'open', 'updatedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}
     entries.append({'key': 'gtb:config', 'value': json.dumps(config)})
@@ -198,26 +210,7 @@ def main():
     wrangler('kv', 'bulk', 'put', bulk, '--namespace-id', ns, '--remote')
     os.remove(bulk)  # contains the answers; don't leave it lying around
 
-    if old_keys:
-        stale = os.path.join(out_dir, 'stale.json')
-        with open(stale, 'w') as f:
-            json.dump(old_keys, f)
-        wrangler('kv', 'bulk', 'delete', stale, '--namespace-id', ns, '--remote', '--force')
-        os.remove(stale)
-        print(f'Removed {len(old_keys)} photos from the previous upload.')
-
-    # Old rounds' phone claims and answer sheets can't be used any more.
-    listing = wrangler('kv', 'key', 'list', '--namespace-id', ns, '--remote', '--prefix', 'gtb:')
-    leftovers = [k['name'] for k in json.loads(listing[listing.index('['):])
-                 if k['name'].startswith(('gtb:claim:', 'gtb:sheet:'))
-                 and not k['name'].startswith((f'gtb:claim:{state["round"]}:', f'gtb:sheet:{state["round"]}:'))]
-    if leftovers:
-        stale = os.path.join(out_dir, 'stale.json')
-        with open(stale, 'w') as f:
-            json.dump(leftovers, f)
-        wrangler('kv', 'bulk', 'delete', stale, '--namespace-id', ns, '--remote', '--force')
-        os.remove(stale)
-        print(f'Cleared {len(leftovers)} claims/answer sheets from earlier rounds.')
+    cleanup(ns, out_dir, {e['key'] for e in entries if e['key'].startswith('gtb:photo:')}, state['round'])
 
     print(f'Done: {len(photos)} photos live, fresh round started. Teams & Leaderboard untouched.')
 
