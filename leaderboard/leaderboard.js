@@ -22,7 +22,7 @@
   const btnEditScores = document.getElementById('btn-edit-scores');
   const btnResetScores = document.getElementById('btn-reset-scores');
   const btnResetAll = document.getElementById('btn-reset-all');
-  const DEFAULT_TEAM_NAMES = ['Team Onesie', 'Team Rattle', 'Team Bootie', 'Team Bibs'];
+  const DEFAULT_TEAM_NAMES = ['Sleepless Knights', 'Baby Formula One', 'Notorious B.I.Bs', 'Pacifier and Desire'];
 
   let teamNamesState = [...DEFAULT_TEAM_NAMES];
 
