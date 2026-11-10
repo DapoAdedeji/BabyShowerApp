@@ -34,7 +34,7 @@
 //   ADMIN_PASSWORD   -> Admin
 //   GUEST_PASSWORD   -> Team Captain (this used to be the "Guest" sign-in;
 //                       the secret keeps its name so nothing changed for them)
-//   VIEWER_PASSWORD  -> Guest (the read-only viewers)
+//   (Guest — the read-only viewers — needs no password.)
 // ============================================================
 
 const QUESTIONS_KEY = 'jeopardy-questions';
@@ -531,14 +531,17 @@ async function login(request, env) {
   const password = body && typeof body.password === 'string' ? body.password : '';
 
   if (!ROLES.includes(role)) return json({ error: 'Choose Guest, Team Captain or Admin.' }, 400);
-  const expected = { admin: env.ADMIN_PASSWORD, captain: env.GUEST_PASSWORD, viewer: env.VIEWER_PASSWORD }[role];
-  const label = { admin: 'admin', captain: 'team captain', viewer: 'guest' }[role];
-  if (!expected) {
-    return json({ error: `The ${label} password hasn't been set up yet.` }, 503);
-  }
-  if (!password || !(await safeEqual(password, expected))) {
-    await slowDown();
-    return json({ error: 'That password isn\'t right — try again.' }, 401);
+  // Guests (read-only: photos + scores) don't need a password.
+  if (role !== 'viewer') {
+    const expected = { admin: env.ADMIN_PASSWORD, captain: env.GUEST_PASSWORD }[role];
+    const label = { admin: 'admin', captain: 'team captain' }[role];
+    if (!expected) {
+      return json({ error: `The ${label} password hasn't been set up yet.` }, 503);
+    }
+    if (!password || !(await safeEqual(password, expected))) {
+      await slowDown();
+      return json({ error: 'That password isn\'t right — try again.' }, 401);
+    }
   }
 
   const token = await signSession(env, { r: role, e: Date.now() + SESSION_DAYS * 86400000 });
@@ -575,7 +578,7 @@ function slowDown() {
 // The signing key is derived from all the passwords, so changing any
 // password signs everybody out.
 async function sessionKey(env) {
-  const material = `baby-shower-session|${env.ADMIN_PASSWORD || ''}|${env.GUEST_PASSWORD || ''}|${env.VIEWER_PASSWORD || ''}`;
+  const material = `baby-shower-session|${env.ADMIN_PASSWORD || ''}|${env.GUEST_PASSWORD || ''}|three-roles`;
   const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(material));
   return crypto.subtle.importKey('raw', hash, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 }
@@ -587,7 +590,7 @@ async function signSession(env, payload) {
 }
 
 async function readSession(request, env) {
-  if (!env.ADMIN_PASSWORD && !env.GUEST_PASSWORD && !env.VIEWER_PASSWORD) return null;
+  if (!env.ADMIN_PASSWORD && !env.GUEST_PASSWORD) return null;
   const token = getCookie(request, COOKIE);
   if (!token || !token.includes('.')) return null;
   const [body, sig] = token.split('.');

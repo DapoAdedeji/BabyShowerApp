@@ -1,6 +1,6 @@
 // ============================================================
-// WELCOME / SIGN-IN — choose Guest (read-only), Team Captain or Admin,
-// then enter that role's password.
+// WELCOME / SIGN-IN — choose Guest (read-only, no password), Team
+// Captain or Admin (each with its own password).
 // The Worker (../worker/index.js) checks the password and sets a
 // sign-in cookie; every page is then gated on the server.
 // ============================================================
@@ -26,14 +26,24 @@
     return checked ? checked.value : null;
   }
 
+  const NO_PASSWORD = ['viewer']; // read-only guests just continue
+
+  function buttonText(role) {
+    return NO_PASSWORD.includes(role) ? 'Continue as Guest →' : 'Sign in →';
+  }
+
   form.querySelectorAll('input[name="role"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const role = selectedRole();
+      const needsPassword = !NO_PASSWORD.includes(role);
       passwordLabel.textContent = `${LABEL[role]} password`;
+      passwordLabel.hidden = !needsPassword;
+      passwordInput.hidden = !needsPassword;
       errorEl.textContent = '';
       passwordInput.value = '';
+      btnSignin.textContent = buttonText(role);
       passwordStep.hidden = false;
-      passwordInput.focus();
+      (needsPassword ? passwordInput : btnSignin).focus();
     });
   });
 
@@ -41,7 +51,7 @@
     e.preventDefault();
     const role = selectedRole();
     if (!role) return;
-    if (!passwordInput.value) {
+    if (!NO_PASSWORD.includes(role) && !passwordInput.value) {
       errorEl.textContent = 'Please enter the password.';
       passwordInput.focus();
       return;
@@ -49,7 +59,7 @@
 
     errorEl.textContent = '';
     btnSignin.disabled = true;
-    btnSignin.textContent = 'Checking…';
+    btnSignin.textContent = NO_PASSWORD.includes(role) ? 'One moment…' : 'Checking…';
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
@@ -68,7 +78,7 @@
       passwordInput.select();
     } finally {
       btnSignin.disabled = false;
-      btnSignin.textContent = 'Sign in →';
+      btnSignin.textContent = buttonText(role);
     }
   });
 

@@ -16,14 +16,14 @@ projecting/casting with. (Double-clicking `index.html` also works, but
 
 ## Who sees what (sign-in)
 
-Everyone lands on **`/welcome/`** and picks one of three cards, each with
-its own password. The Cloudflare Worker (`worker/index.js`) checks every
+Everyone lands on **`/welcome/`** and picks one of three cards. Team
+Captain and Admin each have their own password, and Guest needs none. The Cloudflare Worker (`worker/index.js`) checks every
 request on the server, so typing a URL can't get round it:
 
 | | Can open | Password secret |
 |---|---|---|
 | Not signed in | Only the welcome page | |
-| **Guest** (read-only) | Guest home (`/guest/`): **Guess That Baby photos** (`/guest/photos/`, a view-only gallery with no answering, no names, no results, not tracked on the host screen) and the **view-only Leaderboard** (`/scores/`) | `VIEWER_PASSWORD` |
+| **Guest** (read-only) | Guest home (`/guest/`): **Guess That Baby photos** (`/guest/photos/`, a view-only gallery with no answering, no names, no results, not tracked on the host screen) and the **view-only Leaderboard** (`/scores/`) | none: just tap Guest, then **Continue as Guest** |
 | **Team Captain** | Captain home (`/captain/`): **Guess That Baby** (`/guess-that-baby/`, the phone game, one phone per team) and the **view-only Leaderboard** (`/scores/`) | `GUEST_PASSWORD` (Team Captain used to be the "Guest" sign-in, so the secret kept its name) |
 | **Admin** | The full app: hub, Jeopardy (+ question editor), Leaderboard with editing, Guess That Baby host, Timer | `ADMIN_PASSWORD` |
 
@@ -45,7 +45,7 @@ Baby phone and answers. See `session.js` and `/api/leaderboard` in
 
 Locally, `npx serve .` has no Worker, so there's no sign-in and no API. Use
 `npx wrangler dev` with a `.dev.vars` file (gitignored) containing
-`ADMIN_PASSWORD=...`, `GUEST_PASSWORD=...` and `VIEWER_PASSWORD=...`.
+`ADMIN_PASSWORD=...` and `GUEST_PASSWORD=...`.
 
 ## Guess That Baby (guest phone game)
 

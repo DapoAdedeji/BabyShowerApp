@@ -494,6 +494,7 @@ html, body {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+.field-label-center[hidden], .signin-input[hidden] { display: none; }
 .field-label-center { display: block; font-weight: 700; color: var(--ink-soft); margin-bottom: 8px; }
 .signin-input {
   width: 100%;
