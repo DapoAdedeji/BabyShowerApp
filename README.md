@@ -45,7 +45,7 @@ Baby phone and answers. See `session.js` and `/api/leaderboard` in
 
 Locally, `npx serve .` has no Worker, so there's no sign-in and no API. Use
 `npx wrangler dev` with a `.dev.vars` file (gitignored) containing
-`ADMIN_PASSWORD=...` and `GUEST_PASSWORD=...`.
+`ADMIN_PASSWORD=...`, `GUEST_PASSWORD=...` and `VIEWER_PASSWORD=...`.
 
 ## Guess That Baby (guest phone game)
 
