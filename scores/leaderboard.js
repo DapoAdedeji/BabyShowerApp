@@ -1,6 +1,6 @@
 // ============================================================
-// GUEST LEADERBOARD — view only. Reads the scores the admin app
-// syncs to the server (GET /api/leaderboard) and refreshes itself.
+// VIEW-ONLY LEADERBOARD — for Team Captains and Guests. Reads the
+// server's teams & scores (GET /api/leaderboard) and refreshes itself.
 // ============================================================
 (function () {
   const REFRESH_MS = 10000;
@@ -13,7 +13,7 @@
   async function refresh() {
     try {
       const res = await fetch('/api/leaderboard', { credentials: 'same-origin', cache: 'no-store' });
-      if (res.status === 401) { location.href = '/welcome/?next=/guest/leaderboard/'; return; }
+      if (res.status === 401) { location.href = '/welcome/?next=/scores/'; return; }
       if (!res.ok) throw new Error();
       const data = await res.json();
       const teams = Array.isArray(data.teams) ? data.teams : [];

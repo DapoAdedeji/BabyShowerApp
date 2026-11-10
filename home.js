@@ -1,5 +1,6 @@
 // ============================================================
-// GUEST HOME — welcome screen → menu (mirrors the admin hub's app.js)
+// TEAM CAPTAIN & GUEST HOMES — welcome screen → menu (mirrors the admin
+// hub's app.js). A public file so both roles' home pages can load it.
 // ============================================================
 (function () {
   const screenWelcome = document.getElementById('screen-welcome');
@@ -13,6 +14,6 @@
 
   document.getElementById('btn-enter').addEventListener('click', showMenu);
 
-  // Coming back from a guest page ("/guest/#menu") skips the welcome screen.
+  // Coming back from another page ("/#menu" -> this home) skips the welcome screen.
   if (location.hash === '#menu') showMenu();
 })();

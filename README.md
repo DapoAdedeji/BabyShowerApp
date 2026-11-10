@@ -16,21 +16,21 @@ projecting/casting with. (Double-clicking `index.html` also works, but
 
 ## Who sees what (sign-in)
 
-Everyone lands on **`/welcome/`** and picks **Guest** or **Admin**, each with
+Everyone lands on **`/welcome/`** and picks one of three cards, each with
 its own password. The Cloudflare Worker (`worker/index.js`) checks every
 request on the server, so typing a URL can't get round it:
 
-| | Can open |
-|---|---|
-| Not signed in | Only the welcome page |
-| **Guest** | Guest home (`/guest/`): **Guess That Baby** + a **view-only Leaderboard** (live, refreshes every 10s, no edit or reset) |
-| **Admin** | The full app: hub, Jeopardy (+ question editor), Leaderboard with editing, everything |
+| | Can open | Password secret |
+|---|---|---|
+| Not signed in | Only the welcome page | |
+| **Guest** (read-only) | Guest home (`/guest/`): **Guess That Baby photos** (`/guest/photos/`, a view-only gallery with no answering, no names, no results, not tracked on the host screen) and the **view-only Leaderboard** (`/scores/`) | `VIEWER_PASSWORD` |
+| **Team Captain** | Captain home (`/captain/`): **Guess That Baby** (`/guess-that-baby/`, the phone game, one phone per team) and the **view-only Leaderboard** (`/scores/`) | `GUEST_PASSWORD` (Team Captain used to be the "Guest" sign-in, so the secret kept its name) |
+| **Admin** | The full app: hub, Jeopardy (+ question editor), Leaderboard with editing, Guess That Baby host, Timer | `ADMIN_PASSWORD` |
 
-Passwords are Worker secrets: **`ADMIN_PASSWORD`** and **`GUEST_PASSWORD`**
-(Cloudflare dashboard: babyshowerapp, then Settings, then Variables and
-Secrets; for branch previews, use `npx wrangler preview base-config secret put
-<NAME>`). Sign-in lasts 30 days per device. Changing either password signs
-everyone out.
+Set the secrets in the Cloudflare dashboard (babyshowerapp, then Settings,
+then Variables and Secrets). For branch previews, use `npx wrangler preview
+base-config secret put <NAME>`. Sign-in lasts 30 days per device. Changing
+any password signs everyone out.
 
 **Teams & scores live on the server.** There is one copy, in Cloudflare
 KV. Every admin page (Leaderboard, Jeopardy, Edit Scores, Guess That Baby
@@ -49,8 +49,9 @@ Locally, `npx serve .` has no Worker, so there's no sign-in and no API. Use
 
 ## Guess That Baby (guest phone game)
 
-`/guess-that-baby/`: one phone per team matches every numbered baby photo
-to a name.
+`/guess-that-baby/` (**Team Captains**): one phone per team matches every
+numbered baby photo to a name. Read-only **Guests** only get the photo
+gallery (`/guest/photos/`).
 
 1. **Needs the Leaderboard.** Until the host has set up teams, the game
    says so and can't start.
@@ -131,8 +132,11 @@ BabyShowerApp/
 ├── serve.json                # Disables `serve`'s clean-URL redirects (they break relative asset paths)
 ├── jeopardy/                   # ✅ Baby Jeopardy — fully built, see jeopardy/README.md
 ├── leaderboard/                  # ✅ Team setup + running league table — see below
-├── welcome/                # 🔐 Sign-in page: "Guest" or "Admin", each with its own password
-├── guest/                  # Guest home (2 cards) + view-only leaderboard (guest/leaderboard/)
+├── welcome/                # 🔐 Sign-in page: Guest, Team Captain or Admin, each with its own password
+├── guest/                  # Read-only Guest home + Guess That Baby photo gallery (guest/photos/)
+├── captain/                # Team Captain home (Guess That Baby game + Leaderboard)
+├── scores/                 # View-only Leaderboard (Guests & Team Captains)
+├── home.js                 # Shared "welcome screen → menu" for the Guest & Captain homes
 ├── guess-that-baby/        # 👶 Guess That Baby — the guest phone game (see below)
 ├── signout.js              # Shared "Sign out" button behaviour
 └── timer/                  # ⏱️ Admin countdown timer for the hosts' other games

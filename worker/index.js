@@ -2,19 +2,22 @@
 // BABY SHOWER APP — Cloudflare Worker
 // ============================================================
 // 1. SIGN-IN GATE for the whole site. Everyone starts at /welcome/ and
-//    signs in as a Guest or an Admin (host). The choice is remembered in
-//    a signed, HttpOnly cookie, and every request is checked here on the
-//    server — hiding links in the page wouldn't stop a guest typing a URL.
-//      - Not signed in -> /welcome/
-//      - Guest         -> only /guest/ (home + view-only leaderboard)
-//                         and /guess-that-baby/
-//      - Admin         -> everything (the full app)
+//    signs in as one of three roles. The choice is remembered in a signed,
+//    HttpOnly cookie, and every request is checked here on the server —
+//    hiding links in the page wouldn't stop anyone typing a URL.
+//      - Not signed in  -> /welcome/
+//      - Guest (viewer) -> /guest/ (home), /guest/photos/ (Guess That Baby
+//                          photos, view only) and /scores/ (view-only
+//                          leaderboard). Read-only: can't change anything.
+//      - Team Captain   -> /captain/ (home), /guess-that-baby/ (the phone
+//                          game, one phone per team) and /scores/
+//      - Admin          -> everything (the full app)
 //
 // 2. A small JSON API, with data in Cloudflare KV (env.QUESTIONS):
 //   POST   /api/auth/login      { role, password } -> sets the sign-in cookie
 //   POST   /api/auth/logout     -> clears it
 //   GET    /api/auth/me         -> { role } or { role: null }
-//   GET    /api/leaderboard     -> teams + scores          (guest or admin)
+//   GET    /api/leaderboard     -> teams + scores          (anyone signed in)
 //   POST   /api/leaderboard     -> one change, e.g. { op:'add', id, delta } (admin)
 //                                  — THE source of truth for teams & scores
 //   GET    /api/questions       -> saved Jeopardy questions (admin)
@@ -28,7 +31,10 @@
 //
 // Secrets (Cloudflare dashboard -> Settings -> Variables and Secrets,
 // and `npx wrangler preview base-config secret put` for previews):
-//   ADMIN_PASSWORD, GUEST_PASSWORD
+//   ADMIN_PASSWORD   -> Admin
+//   GUEST_PASSWORD   -> Team Captain (this used to be the "Guest" sign-in;
+//                       the secret keeps its name so nothing changed for them)
+//   VIEWER_PASSWORD  -> Guest (the read-only viewers)
 // ============================================================
 
 const QUESTIONS_KEY = 'jeopardy-questions';
@@ -49,9 +55,23 @@ const LIMITS = {
 
 // Who can open which pages. Paths are matched as "the folder or anything in it".
 const PUBLIC_PATHS = ['/welcome'];
-const PUBLIC_FILES = ['/style.css', '/signout.js', '/favicon.ico', '/robots.txt'];
-const GUEST_PATHS = ['/guest', '/guess-that-baby'];
-const GUEST_BLOCKED_PATHS = ['/guess-that-baby/host'];   // inside a guest path, but admin only
+const PUBLIC_FILES = ['/style.css', '/signout.js', '/home.js', '/favicon.ico', '/robots.txt'];
+const ROLES = ['admin', 'captain', 'viewer'];
+const HOME = { admin: '/', captain: '/captain/', viewer: '/guest/' };
+// Pages each non-admin role may open (admins may open everything).
+const ROLE_PATHS = {
+  captain: ['/captain', '/guess-that-baby', '/scores'],
+  viewer: ['/guest', '/scores', '/guess-that-baby/demo']  // demo = placeholder photos when none are uploaded
+};
+// Inside an allowed folder, but still off-limits: role -> { path: send them here }.
+const ROLE_BLOCKED = {
+  captain: { '/guess-that-baby/host': '/guess-that-baby/' },
+  viewer: {}
+};
+// Where to send someone who tries a page their role can't open.
+const ROLE_REDIRECTS = {
+  viewer: { '/guess-that-baby': '/guest/photos/' }
+};
 
 export default {
   async fetch(request, env) {
@@ -81,13 +101,19 @@ async function handlePage(request, env, url) {
     return redirect(`/welcome/${next}`);
   }
 
-  if (session.role === 'guest' && (!matches(path, GUEST_PATHS) || matches(path, GUEST_BLOCKED_PATHS))) {
-    if (!isPageRequest(path)) return new Response('Not available for guests.', { status: 403 });
-    return redirect(matches(path, GUEST_BLOCKED_PATHS) ? '/guess-that-baby/' : '/guest/');
+  if (session.role !== 'admin') {
+    const role = session.role;
+    const blocked = Object.keys(ROLE_BLOCKED[role]).find(p => matches(path, [p]));
+    if (blocked || !matches(path, ROLE_PATHS[role])) {
+      if (!isPageRequest(path)) return new Response('Not available.', { status: 403 });
+      if (blocked) return redirect(ROLE_BLOCKED[role][blocked]);
+      const elsewhere = Object.keys(ROLE_REDIRECTS[role] || {}).find(p => matches(path, [p]));
+      return redirect(elsewhere ? ROLE_REDIRECTS[role][elsewhere] : HOME[role]);
+    }
   }
 
   // Admins get the host view of Guess That Baby, never the phone game —
-  // even if this browser once joined a team as a guest.
+  // even if this browser once joined a team as a captain.
   if (session.role === 'admin' && (path === '/guess-that-baby' || path === '/guess-that-baby/' || path === '/guess-that-baby/index.html')) {
     return redirect('/guess-that-baby/host/');
   }
@@ -212,6 +238,8 @@ async function handleApi(request, env, url) {
 //   POST /api/gtb/claim  {team}    claim a team by id -> { token }
 //   PUT  /api/gtb/answers {answers} save this team's sheet (only while open)
 //   GET  /api/gtb/photo/<id>       a baby photo (JPEG) — see scripts/seed_baby_photos.py
+//   GET  /api/gtb/photos           numbered photo list only (read-only guests use this;
+//                                  viewers can't call any other /api/gtb route)
 // Admin endpoints:
 //   GET  /api/gtb/admin            full picture: claims, sheets, answer key
 //   POST /api/gtb/close | /open | /reveal | /reset
@@ -305,7 +333,19 @@ async function handleGtb(request, env, url) {
     });
   }
 
-  // ---------- Phone (guest) endpoints ----------
+  // ---------- Photo list for read-only guests ----------
+  // Just the numbered photos: no names, no answers, no teams, nothing tracked.
+  if (route === 'photos' && method === 'GET') {
+    const config = await gtbConfig(env);
+    return json({ photos: config.photos.map(p => ({ n: p.n, img: p.img })), demo: !!config.demo });
+  }
+
+  // Read-only guests can't do anything else in the game.
+  if (session && session.role === 'viewer' && !isAdmin) {
+    return json({ error: 'Guests can view the photos, but only team captains can play.' }, 403);
+  }
+
+  // ---------- Phone (team captain) endpoints ----------
   if (route === 'state' && method === 'GET') {
     const [config, state, teams] = await Promise.all([gtbConfig(env), gtbState(env), gtbTeams(env)]);
     const claims = await Promise.all(teams.map(t => env.QUESTIONS.get(gtbClaimKey(state.round, t.id), 'json')));
@@ -490,10 +530,11 @@ async function login(request, env) {
   const role = body && body.role;
   const password = body && typeof body.password === 'string' ? body.password : '';
 
-  if (role !== 'guest' && role !== 'admin') return json({ error: 'Choose Guest or Host.' }, 400);
-  const expected = role === 'admin' ? env.ADMIN_PASSWORD : env.GUEST_PASSWORD;
+  if (!ROLES.includes(role)) return json({ error: 'Choose Guest, Team Captain or Admin.' }, 400);
+  const expected = { admin: env.ADMIN_PASSWORD, captain: env.GUEST_PASSWORD, viewer: env.VIEWER_PASSWORD }[role];
+  const label = { admin: 'admin', captain: 'team captain', viewer: 'guest' }[role];
   if (!expected) {
-    return json({ error: `The ${role === 'admin' ? 'host' : 'guest'} password hasn't been set up yet.` }, 503);
+    return json({ error: `The ${label} password hasn't been set up yet.` }, 503);
   }
   if (!password || !(await safeEqual(password, expected))) {
     await slowDown();
@@ -501,7 +542,7 @@ async function login(request, env) {
   }
 
   const token = await signSession(env, { r: role, e: Date.now() + SESSION_DAYS * 86400000 });
-  return json({ ok: true, role }, 200, {
+  return json({ ok: true, role, home: HOME[role] }, 200, {
     'Set-Cookie': `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}`
   });
 }
@@ -531,10 +572,10 @@ function slowDown() {
 
 // ---------- Signed session cookie ----------
 // Token = base64url(JSON payload) + "." + base64url(HMAC-SHA256 signature).
-// The signing key is derived from both passwords, so changing either
+// The signing key is derived from all the passwords, so changing any
 // password signs everybody out.
 async function sessionKey(env) {
-  const material = `baby-shower-session|${env.ADMIN_PASSWORD || ''}|${env.GUEST_PASSWORD || ''}`;
+  const material = `baby-shower-session|${env.ADMIN_PASSWORD || ''}|${env.GUEST_PASSWORD || ''}|${env.VIEWER_PASSWORD || ''}`;
   const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(material));
   return crypto.subtle.importKey('raw', hash, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 }
@@ -546,7 +587,7 @@ async function signSession(env, payload) {
 }
 
 async function readSession(request, env) {
-  if (!env.ADMIN_PASSWORD && !env.GUEST_PASSWORD) return null;
+  if (!env.ADMIN_PASSWORD && !env.GUEST_PASSWORD && !env.VIEWER_PASSWORD) return null;
   const token = getCookie(request, COOKIE);
   if (!token || !token.includes('.')) return null;
   const [body, sig] = token.split('.');
@@ -554,7 +595,8 @@ async function readSession(request, env) {
     const ok = await crypto.subtle.verify('HMAC', await sessionKey(env), b64urlDecode(sig), new TextEncoder().encode(body));
     if (!ok) return null;
     const payload = JSON.parse(new TextDecoder().decode(b64urlDecode(body)));
-    if (!payload || (payload.r !== 'guest' && payload.r !== 'admin') || !(payload.e > Date.now())) return null;
+    // Cookies from before the three roles (r: 'guest') are no longer valid: sign in again.
+    if (!payload || !ROLES.includes(payload.r) || !(payload.e > Date.now())) return null;
     return { role: payload.r };
   } catch (e) {
     return null;

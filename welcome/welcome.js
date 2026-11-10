@@ -1,11 +1,17 @@
 // ============================================================
-// WELCOME / SIGN-IN — choose Guest or Admin, enter that password.
+// WELCOME / SIGN-IN — choose Guest (read-only), Team Captain or Admin,
+// then enter that role's password.
 // The Worker (../worker/index.js) checks the password and sets a
 // sign-in cookie; every page is then gated on the server.
 // ============================================================
 (function () {
-  const HOME = { guest: '/guest/', admin: '/' };
-  const LABEL = { guest: 'Guest', admin: 'Admin' };
+  const HOME = { viewer: '/guest/', captain: '/captain/', admin: '/' };
+  const LABEL = { viewer: 'Guest', captain: 'Team Captain', admin: 'Admin' };
+  // Pages each role may be sent back to after signing in (admins: anywhere).
+  const ALLOWED = {
+    viewer: /^\/(guest|scores)(\/|$)/,
+    captain: /^\/(captain|guess-that-baby|scores)(\/|$)/
+  };
 
   const form = document.getElementById('signin-form');
   const passwordStep = document.getElementById('password-step');
@@ -71,7 +77,8 @@
     const next = new URLSearchParams(location.search).get('next');
     const safe = next && next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/welcome');
     if (!safe) return HOME[role];
-    if (role === 'guest' && !/^\/(guest|guess-that-baby)(\/|$)/.test(next)) return HOME.guest;
+    if (ALLOWED[role] && !ALLOWED[role].test(next)) return HOME[role];
+    if (role === 'captain' && next.startsWith('/guess-that-baby/host')) return HOME.captain;
     return next;
   }
 
@@ -81,9 +88,10 @@
     .then(data => {
       if (!data || !data.role) return;
       signedInNote.innerHTML = '';
+      if (!LABEL[data.role]) return;
       signedInNote.append(`You're signed in as ${LABEL[data.role]}. `);
       const link = document.createElement('a');
-      link.href = HOME[data.role];
+      link.href = HOME[data.role] || '/';
       link.textContent = 'Continue →';
       signedInNote.appendChild(link);
       signedInNote.hidden = false;

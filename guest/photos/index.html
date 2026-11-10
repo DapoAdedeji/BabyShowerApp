@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <title>Baby Photos — Dapo & Desola's Baby Shower</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👶</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="photos.css" />
+</head>
+<body class="gallery-page">
+  <div class="floaty-bg" aria-hidden="true">
+    <span>👶</span><span>📸</span><span>🍼</span><span>⭐</span><span>🧸</span><span>👶</span><span>📸</span><span>🍼</span>
+  </div>
+
+  <!-- VIEW ONLY: guests can look at the photos; only team captains answer. -->
+  <main class="gallery-wrap">
+    <header class="gallery-head">
+      <a href="/#menu" class="back-link">← Back</a>
+      <h1 class="gallery-title">👶 Guess That Baby</h1>
+      <p class="gallery-sub">Can you tell who's who? Have a look 👀 — your team captain is answering for your team.</p>
+    </header>
+
+    <p id="gallery-status" class="gallery-status" role="status">Loading the babies…</p>
+    <div id="gallery" class="gallery-grid"></div>
+  </main>
+
+  <!-- Full-screen viewer -->
+  <div id="viewer" class="viewer" hidden role="dialog" aria-modal="true" aria-label="Baby photo">
+    <div class="viewer-top">
+      <span id="viewer-count" class="viewer-count"></span>
+      <button type="button" id="viewer-close" class="viewer-btn" aria-label="Close">✕</button>
+    </div>
+    <div class="viewer-stage" id="viewer-stage">
+      <img id="viewer-img" alt="" />
+    </div>
+    <div class="viewer-nav">
+      <button type="button" id="viewer-prev" class="viewer-btn wide" aria-label="Previous photo">‹ Prev</button>
+      <span id="viewer-label" class="viewer-label"></span>
+      <button type="button" id="viewer-next" class="viewer-btn wide" aria-label="Next photo">Next ›</button>
+    </div>
+  </div>
+
+  <script src="photos.js"></script>
+</body>
+</html>
