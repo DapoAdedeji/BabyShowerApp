@@ -72,7 +72,7 @@ window.GAME_DATA = {
       title: "Mummy and Daddy to Be",
       clues: [
         { value: 100, clue: "Desola and Dapo first met in this place (city)", answer: "Bristol" },
-        { value: 200, clue: "What football team does Dapo support?", answer: "Manchester United" },
+        { value: 200, clue: "How many siblings (step and half included) does Dad have?", answer: "One" },
         { value: 300, clue: "The first thing Desola craved during pregnancy", answer: "Greek Yoghurt" },
         { value: 400, clue: "Desola and Dapo's first international holiday destination", answer: "Cyprus" },
         { value: 500, clue: "The baby's due date", answer: "25th January" }
