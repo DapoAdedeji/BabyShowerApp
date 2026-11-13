@@ -41,7 +41,7 @@ window.GAME_DATA = {
     {
       title: "Nursery Rhymes",
       clues: [
-        { value: 100, clue: "Twinkle, twinkle, little ___", answer: "Star" },
+        { value: 100, clue: "The Incy Wincy Spider climbed up this", answer: "The water spout" },
         { value: 200, clue: "Humpty Dumpty sat on one of these", answer: "A wall" },
         { value: 300, clue: "What happens when the bough breaks in \"Rock-a-bye Baby\"", answer: "The cradle falls" },
         { value: 400, clue: "Which little piggy had roast beef", answer: "The third piggy" },
@@ -51,8 +51,8 @@ window.GAME_DATA = {
     {
       title: "Famous Babies",
       clues: [
-        { value: 100, clue: "Peppa Pig's little brother", answer: "George" },
-        { value: 200, clue: "This baby elephant with huge ears learns to fly", answer: "Dumbo" },
+        { value: 100, clue: "This baby elephant with huge ears learns to fly", answer: "Dumbo" },
+        { value: 200, clue: "Peppa Pig's little brother", answer: "George" },
         { value: 300, clue: "Tommy Pickles leads the babies in this cartoon", answer: "Rugrats" },
         { value: 400, clue: "The real name of \"Baby Yoda\" in The Mandalorian", answer: "Grogu" },
         { value: 500, clue: "The 1987 film with Tom Selleck, Steve Guttenberg and Ted Danson", answer: "Three Men and a Baby" }
@@ -72,8 +72,8 @@ window.GAME_DATA = {
       title: "Mummy and Daddy to Be",
       clues: [
         { value: 100, clue: "Desola and Dapo first met in this place (city)", answer: "Bristol" },
-        { value: 200, clue: "Dapo's favourite takeaway", answer: "Chinese Rice and Ribs" },
-        { value: 300, clue: "The first thing Desola craved during pregnancy", answer: "Doritos" },
+        { value: 200, clue: "What football team does Dapo support?", answer: "Manchester United" },
+        { value: 300, clue: "The first thing Desola craved during pregnancy", answer: "Greek Yoghurt" },
         { value: 400, clue: "Desola and Dapo's first international holiday destination", answer: "Cyprus" },
         { value: 500, clue: "The baby's due date", answer: "25th January" }
       ]
@@ -83,7 +83,7 @@ window.GAME_DATA = {
       clues: [
         { value: 100, clue: "YMDUM", answer: "DUMMY" },
         { value: 200, clue: "ETRLAT", answer: "RATTLE" },
-        { value: 300, clue: "TNOBNE", answer: "BONNET" },
+        { value: 300, clue: "KTNABEL", answer: "BLANKET" },
         { value: 400, clue: "RYSRUEN", answer: "NURSERY" },
         { value: 500, clue: "LERTSROL", answer: "STROLLER" }
       ]
